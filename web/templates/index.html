@@ -421,6 +421,9 @@
                                 <button class="btn btn-outline-warning" onclick="updateAllMetadata()">
                                     <i class="fas fa-cloud-download-alt me-1"></i>Update All Metadata
                                 </button>
+                                <button class="btn btn-outline-dark" onclick="showDockerLogs()">
+                                    <i class="fas fa-terminal me-1"></i>Show Docker Logs
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -943,6 +946,61 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="button" class="btn btn-primary" onclick="updateCompletionStatus()">Update Status</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Docker Logs Modal -->
+    <div class="modal fade" id="dockerLogsModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-terminal me-2"></i>Docker Container Logs
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label for="dockerContainer" class="form-label">Container</label>
+                                <select class="form-select" id="dockerContainer">
+                                    <option value="pelico-app">pelico-app (Application)</option>
+                                    <option value="pelico-postgres">pelico-postgres (Database)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="dockerLogLines" class="form-label">Number of Lines</label>
+                                <select class="form-select" id="dockerLogLines">
+                                    <option value="50">50 lines</option>
+                                    <option value="100" selected>100 lines</option>
+                                    <option value="200">200 lines</option>
+                                    <option value="500">500 lines</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <button class="btn btn-primary" onclick="refreshDockerLogs()">
+                            <i class="fas fa-sync me-1"></i>Refresh Logs
+                        </button>
+                        <button class="btn btn-outline-secondary" onclick="clearDockerLogsDisplay()">
+                            <i class="fas fa-trash me-1"></i>Clear Display
+                        </button>
+                    </div>
+                    <div id="dockerLogsContent" class="bg-dark text-light p-3 rounded" style="height: 400px; overflow-y: auto; font-family: 'Courier New', monospace; font-size: 12px;">
+                        <div class="text-center text-muted">
+                            Click "Refresh Logs" to load container logs
+                        </div>
+                    </div>
+                    <div id="dockerLogsInfo" class="mt-2 text-muted small">
+                        <!-- Log info will be displayed here -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>

@@ -3,6 +3,8 @@ package handlers
 import (
 	"fmt"
 	"net/http"
+	"os/exec"
+	"strings"
 	"time"
 
 	"pelico/internal/config"
@@ -236,6 +238,35 @@ func (h *BackupHandler) BackupToNextcloud(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"message":   "Backup successfully uploaded to Nextcloud",
+		"timestamp": time.Now(),
+	})
+}
+
+func (h *BackupHandler) GetDockerLogs(c *gin.Context) {
+	// Get query parameters
+	lines := c.DefaultQuery("lines", "100")
+	container := c.DefaultQuery("container", "pelico-app")
+	
+	// Build docker logs command
+	cmd := exec.Command("docker", "logs", "--tail", lines, container)
+	
+	// Execute command
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to get Docker logs: " + err.Error(),
+			"details": string(output),
+		})
+		return
+	}
+	
+	// Split logs into lines
+	logLines := strings.Split(strings.TrimSpace(string(output)), "\n")
+	
+	c.JSON(http.StatusOK, gin.H{
+		"container": container,
+		"lines": len(logLines),
+		"logs": logLines,
 		"timestamp": time.Now(),
 	})
 }

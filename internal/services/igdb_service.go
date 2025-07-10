@@ -206,6 +206,7 @@ func (s *IGDBService) getPlatformFilter(platformName string) string {
 		"Game Boy": "33",
 		"Game Boy Color": "22",
 		"Game Boy Advance": "24",
+		"Gameboy Advance": "24",
 		"GBA": "24",
 		"Nintendo DS": "20",
 		"Nintendo 3DS": "37",

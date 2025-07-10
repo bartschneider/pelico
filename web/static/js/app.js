@@ -2326,3 +2326,81 @@ async function filterByCompletionStatus(status) {
         showToast('Failed to filter games', 'error');
     }
 }
+
+// Docker logs functionality
+function showDockerLogs() {
+    new bootstrap.Modal(document.getElementById('dockerLogsModal')).show();
+}
+
+async function refreshDockerLogs() {
+    try {
+        const container = document.getElementById('dockerContainer').value;
+        const lines = document.getElementById('dockerLogLines').value;
+        
+        // Show loading
+        const logsContent = document.getElementById('dockerLogsContent');
+        const logsInfo = document.getElementById('dockerLogsInfo');
+        
+        logsContent.innerHTML = '<div class="text-center text-info"><i class="fas fa-spinner fa-spin"></i> Loading logs...</div>';
+        logsInfo.innerHTML = '';
+        
+        // Fetch logs from API
+        const response = await apiCall(`/docker/logs?container=${encodeURIComponent(container)}&lines=${lines}`);
+        
+        // Display logs
+        if (response.logs && response.logs.length > 0) {
+            const logsHtml = response.logs.map(line => {
+                // Basic log line formatting - detect log levels
+                let className = '';
+                if (line.toLowerCase().includes('error')) {
+                    className = 'text-danger';
+                } else if (line.toLowerCase().includes('warn')) {
+                    className = 'text-warning';
+                } else if (line.toLowerCase().includes('info')) {
+                    className = 'text-info';
+                } else if (line.toLowerCase().includes('debug')) {
+                    className = 'text-muted';
+                }
+                
+                return `<div class="${className}">${escapeHtml(line)}</div>`;
+            }).join('');
+            
+            logsContent.innerHTML = logsHtml;
+            
+            // Scroll to bottom
+            logsContent.scrollTop = logsContent.scrollHeight;
+            
+            // Update info
+            logsInfo.innerHTML = `
+                <strong>Container:</strong> ${response.container} | 
+                <strong>Lines:</strong> ${response.lines} | 
+                <strong>Updated:</strong> ${new Date(response.timestamp).toLocaleString()}
+            `;
+        } else {
+            logsContent.innerHTML = '<div class="text-center text-muted">No logs available</div>';
+            logsInfo.innerHTML = '';
+        }
+        
+    } catch (error) {
+        console.error('Failed to load Docker logs:', error);
+        document.getElementById('dockerLogsContent').innerHTML = `
+            <div class="text-center text-danger">
+                <i class="fas fa-exclamation-triangle"></i>
+                Failed to load logs: ${error.message}
+            </div>
+        `;
+        document.getElementById('dockerLogsInfo').innerHTML = '';
+    }
+}
+
+function clearDockerLogsDisplay() {
+    document.getElementById('dockerLogsContent').innerHTML = '<div class="text-center text-muted">Click "Refresh Logs" to load container logs</div>';
+    document.getElementById('dockerLogsInfo').innerHTML = '';
+}
+
+// Helper function to escape HTML
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
