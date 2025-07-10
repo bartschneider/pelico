@@ -3,6 +3,7 @@ package handlers
 import (
 	"log/slog"
 	"net/http"
+	"sort"
 	"strconv"
 	"time"
 	"pelico/internal/errors"
@@ -683,4 +684,28 @@ func (h *GameHandler) GetGamesByCompletionStatus(c *gin.Context) {
 	}
 	
 	c.JSON(http.StatusOK, games)
+}
+
+// GetGenres returns all unique genres from the game collection
+func (h *GameHandler) GetGenres(c *gin.Context) {
+	var genres []string
+	
+	// Get distinct genres from all games
+	result := h.db.Model(&models.Game{}).
+		Distinct("genre").
+		Where("genre != '' AND genre IS NOT NULL").
+		Pluck("genre", &genres)
+	
+	if result.Error != nil {
+		errors.RespondWithError(c, errors.ErrInternalServer, map[string]string{
+			"operation": "fetch_genres",
+			"error": result.Error.Error(),
+		})
+		return
+	}
+	
+	// Sort genres alphabetically
+	sort.Strings(genres)
+	
+	c.JSON(http.StatusOK, genres)
 }

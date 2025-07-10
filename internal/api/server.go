@@ -72,6 +72,7 @@ func (s *Server) setupRoutes() {
 		// Games
 		api.GET("/games", gameHandler.GetGames)
 		api.GET("/games/recently-played", gameHandler.GetRecentlyPlayedGames)
+		api.GET("/games/genres", gameHandler.GetGenres)
 		api.GET("/games/:id", gameHandler.GetGame)
 		api.POST("/games", gameHandler.CreateGame)
 		api.POST("/games/from-metadata", gameHandler.CreateGameFromMetadata)

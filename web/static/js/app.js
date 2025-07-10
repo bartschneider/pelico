@@ -18,6 +18,7 @@ let isLoading = false;
 // Initialize app
 document.addEventListener('DOMContentLoaded', function() {
     loadPlatforms();
+    loadGenres();
     loadGames();
     loadActiveSessions();
     showView('collection');
@@ -115,7 +116,7 @@ async function loadGames(page = 1, append = false) {
         currentPage = response.pagination.page;
         totalPages = response.pagination.total_pages;
         
-        extractGenres();
+        extractGenresFromCurrentGames();
         updateFilterOptions();
         displayGames(games);
         updatePaginationControls();
@@ -189,25 +190,35 @@ function displayActiveSessions() {
     const container = document.getElementById('activeSessionsContainer');
     const content = document.getElementById('activeSessionsContent');
     
-    if (!activeSessions || activeSessions.length === 0) {
-        container.style.display = 'none';
+    // Safety checks for DOM elements
+    if (!container || !content) {
+        console.warn('Active sessions container or content not found in DOM');
         return;
     }
     
+    if (!activeSessions || activeSessions.length === 0) {
+        container.style.display = 'none';
+        container.classList.add('d-none');
+        return;
+    }
+    
+    // ALWAYS show container if we have sessions
     container.style.display = 'block';
+    container.classList.remove('d-none');
+    
     content.innerHTML = activeSessions.map(session => `
         <div class="col-md-6 mb-2">
             <div class="card bg-primary text-white">
                 <div class="card-body p-3">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h6 class="mb-1">${session.game.title}</h6>
+                            <h6 class="mb-1">${session.game?.title || 'Unknown Game'}</h6>
                             <small>Started: ${new Date(session.start_time).toLocaleTimeString()}</small>
                             <div class="mt-1">
                                 <i class="fas fa-clock"></i> 
-                                ${formatDuration(session.current_duration)}
+                                ${formatDuration(session.current_duration || 0)}
                             </div>
-                            ${session.game.platform ? `<small><i class="fas fa-desktop"></i> ${session.game.platform.name}</small>` : ''}
+                            ${session.game?.platform ? `<small><i class="fas fa-desktop"></i> ${session.game.platform.name}</small>` : ''}
                         </div>
                         <div>
                             <button class="btn btn-light btn-sm" 
@@ -245,7 +256,17 @@ function formatDuration(minutes) {
     return `${mins}m`;
 }
 
-function extractGenres() {
+async function loadGenres() {
+    try {
+        allGenres = await apiCall('/games/genres');
+    } catch (error) {
+        console.error('Failed to load genres:', error);
+        // Fallback to extracting from current games
+        extractGenresFromCurrentGames();
+    }
+}
+
+function extractGenresFromCurrentGames() {
     const genres = new Set();
     games.forEach(game => {
         if (game.genre) {
@@ -756,7 +777,7 @@ async function loadGamesWithParams(params) {
         currentPage = response.pagination.page;
         totalPages = response.pagination.total_pages;
         
-        extractGenres();
+        extractGenresFromCurrentGames();
         updateFilterOptions(true); // Preserve current filter selections
         displayGames(games);
         updatePaginationControls();
@@ -2148,7 +2169,7 @@ async function filterByCompletionStatus(status) {
         totalPages = 1; // Since we're showing all filtered results on one page
         
         // Extract genres from filtered games and update filter options
-        extractGenres();
+        extractGenresFromCurrentGames();
         updateFilterOptions(false); // Don't preserve selection for completion filters
         
         displayGames(filteredGames);
