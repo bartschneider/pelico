@@ -132,3 +132,6 @@ deploy-*.sh
 *deploy*.sh
 Makefile.local
 Makefile.secret
+
+# LLM coding scaffolding
+ARCHITECTURE_AUDIT*

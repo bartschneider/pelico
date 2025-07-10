@@ -207,6 +207,7 @@ function displayActiveSessions() {
                                 <i class="fas fa-clock"></i> 
                                 ${formatDuration(session.current_duration)}
                             </div>
+                            ${session.game.platform ? `<small><i class="fas fa-desktop"></i> ${session.game.platform.name}</small>` : ''}
                         </div>
                         <div>
                             <button class="btn btn-light btn-sm" 
@@ -254,7 +255,11 @@ function extractGenres() {
     allGenres = Array.from(genres).sort();
 }
 
-function updateFilterOptions() {
+function updateFilterOptions(preserveSelection = false) {
+    // Save current selections if we need to preserve them
+    const currentPlatform = preserveSelection ? document.getElementById('platformFilter')?.value : '';
+    const currentGenre = preserveSelection ? document.getElementById('genreFilter')?.value : '';
+    
     // Update platform filter
     const platformFilter = document.getElementById('platformFilter');
     if (platformFilter) {
@@ -265,6 +270,11 @@ function updateFilterOptions() {
             option.textContent = platform.name;
             platformFilter.appendChild(option);
         });
+        
+        // Restore selection if preserving
+        if (preserveSelection && currentPlatform) {
+            platformFilter.value = currentPlatform;
+        }
     }
     
     // Update genre filter
@@ -277,6 +287,11 @@ function updateFilterOptions() {
             option.textContent = genre;
             genreFilter.appendChild(option);
         });
+        
+        // Restore selection if preserving
+        if (preserveSelection && currentGenre) {
+            genreFilter.value = currentGenre;
+        }
     }
 }
 
@@ -742,7 +757,7 @@ async function loadGamesWithParams(params) {
         totalPages = response.pagination.total_pages;
         
         extractGenres();
-        updateFilterOptions();
+        updateFilterOptions(true); // Preserve current filter selections
         displayGames(games);
         updatePaginationControls();
     } catch (error) {
@@ -2107,6 +2122,19 @@ async function filterByCompletionStatus(status) {
         // Reset pagination
         currentPage = 1;
         
+        // Update active filter button first
+        document.querySelectorAll('.completion-filter').forEach(btn => btn.classList.remove('active'));
+        const targetButton = document.querySelector(`[data-status="${status}"]`);
+        if (targetButton) {
+            targetButton.classList.add('active');
+        }
+        
+        // If "All Games" is selected, just reload normally
+        if (status === 'all') {
+            await loadGames();
+            return;
+        }
+        
         let filteredGames;
         if (status === 'backlog') {
             // Backlog includes both not_started and in_progress
@@ -2119,20 +2147,12 @@ async function filterByCompletionStatus(status) {
         games = filteredGames;
         totalPages = 1; // Since we're showing all filtered results on one page
         
+        // Extract genres from filtered games and update filter options
+        extractGenres();
+        updateFilterOptions(false); // Don't preserve selection for completion filters
+        
         displayGames(filteredGames);
         updatePaginationControls();
-        
-        // Update active filter button
-        document.querySelectorAll('.completion-filter').forEach(btn => btn.classList.remove('active'));
-        const targetButton = document.querySelector(`[data-status="${status}"]`);
-        if (targetButton) {
-            targetButton.classList.add('active');
-        }
-        
-        // Clear other filters to show this is a completion filter
-        document.getElementById('platformFilter').value = '';
-        document.getElementById('genreFilter').value = '';
-        document.getElementById('sortBy').value = 'title';
         
         // Show user feedback
         const statusLabel = status === 'backlog' ? 'backlog' : 
