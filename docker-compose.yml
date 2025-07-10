@@ -25,7 +25,7 @@ services:
 
   # Pelico Application
   pelico:
-    image: pelico:latest
+    build: .
     container_name: pelico-app
     env_file:
       - .env
