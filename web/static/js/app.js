@@ -27,7 +27,17 @@ document.addEventListener('DOMContentLoaded', async function() {
     if (params.get('platform')) {
         const platformFilter = document.getElementById('platformFilter');
         if (platformFilter) {
-            platformFilter.value = params.get('platform');
+            const platformValue = params.get('platform');
+            // Try to match by ID first, then fallback to name for backward compatibility
+            const matchingOption = Array.from(platformFilter.options).find(opt => 
+                opt.value === platformValue || opt.dataset.name === platformValue
+            );
+            if (matchingOption) {
+                platformFilter.value = matchingOption.value;
+            } else {
+                // Direct assignment for backward compatibility
+                platformFilter.value = platformValue;
+            }
         }
     }
     if (params.get('genre')) {
@@ -356,14 +366,21 @@ function updateFilterOptions(preserveSelection = false) {
         platformFilter.innerHTML = '<option value="">All Platforms</option>';
         platforms.forEach(platform => {
             const option = document.createElement('option');
-            option.value = platform.name;  // Use name instead of ID for backend compatibility
+            option.value = platform.id;  // Use ID for robust identification
             option.textContent = platform.name;
+            option.dataset.name = platform.name;  // Store name for backward compatibility
             platformFilter.appendChild(option);
         });
         
         // Restore selection if preserving
         if (preserveSelection && currentPlatform) {
-            platformFilter.value = currentPlatform;
+            // Try to match by ID first, then fallback to name for backward compatibility
+            const matchingOption = Array.from(platformFilter.options).find(opt => 
+                opt.value === currentPlatform || opt.dataset.name === currentPlatform
+            );
+            if (matchingOption) {
+                platformFilter.value = matchingOption.value;
+            }
         }
     }
     
@@ -868,6 +885,18 @@ function debouncedFilterGames() {
     filterDebounceTimeout = setTimeout(() => {
         applyAllFilters();
     }, FILTER_DEBOUNCE_DELAY);
+}
+
+// Helper function to get platform ID by name for URL compatibility
+function getPlatformIdByName(platformName) {
+    const platform = platforms.find(p => p.name === platformName);
+    return platform ? platform.id : null;
+}
+
+// Helper function to get platform name by ID 
+function getPlatformNameById(platformId) {
+    const platform = platforms.find(p => p.id.toString() === platformId.toString());
+    return platform ? platform.name : null;
 }
 
 // Legacy function for backward compatibility

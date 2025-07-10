@@ -68,10 +68,17 @@ func (h *GameHandler) GetGames(c *gin.Context) {
 	
 	// Apply platform filter
 	if platformFilter != "" && platformFilter != "all" {
-		var platform models.Platform
-		result := h.db.Where("name = ?", platformFilter).First(&platform)
-		if result.Error == nil && platform.ID > 0 {
-			baseQuery = baseQuery.Where("platform_id = ?", platform.ID)
+		// Try to parse as ID first, then fallback to name lookup
+		if platformID, err := strconv.ParseUint(platformFilter, 10, 32); err == nil {
+			// Filter value is a valid ID
+			baseQuery = baseQuery.Where("platform_id = ?", uint(platformID))
+		} else {
+			// Filter value is a name, look up the platform
+			var platform models.Platform
+			result := h.db.Where("name = ?", platformFilter).First(&platform)
+			if result.Error == nil && platform.ID > 0 {
+				baseQuery = baseQuery.Where("platform_id = ?", platform.ID)
+			}
 		}
 	}
 	
@@ -128,8 +135,19 @@ func (h *GameHandler) GetGames(c *gin.Context) {
 	
 	// Log filter operation
 	if h.logger != nil {
+		// Determine platform filter type for logging
+		platformFilterType := "none"
+		if platformFilter != "" && platformFilter != "all" {
+			if _, err := strconv.ParseUint(platformFilter, 10, 32); err == nil {
+				platformFilterType = "id"
+			} else {
+				platformFilterType = "name"
+			}
+		}
+		
 		h.logger.LogWithContext(c, slog.LevelDebug, "games_filtered",
 			slog.String("platform_filter", platformFilter),
+			slog.String("platform_filter_type", platformFilterType),
 			slog.String("genre_filter", genreFilter),
 			slog.String("completion_filter", completionFilter),
 			slog.Int64("filtered_total", total),
