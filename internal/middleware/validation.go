@@ -80,24 +80,26 @@ func getValidationMessage(fe validator.FieldError) string {
 
 // CreateGameRequest represents the request to create a game
 type CreateGameRequest struct {
-	Title       string  `json:"title" binding:"required,min=1,max=255"`
-	PlatformID  uint    `json:"platform_id" binding:"required,gt=0"`
-	Year        int     `json:"year" binding:"omitempty,gte=1970,lte=2030"`
-	Genre       string  `json:"genre" binding:"omitempty,max=100"`
-	Rating      float32 `json:"rating" binding:"omitempty,gte=0,lte=10"`
-	Description string  `json:"description" binding:"omitempty,max=2000"`
-	CoverArtURL string  `json:"cover_art_url" binding:"omitempty,url"`
+	Title             string   `json:"title" binding:"required,min=1,max=255"`
+	PlatformID        uint     `json:"platform_id" binding:"required,gt=0"`
+	Year              int      `json:"year" binding:"omitempty,gte=1970,lte=2030"`
+	Genre             string   `json:"genre" binding:"omitempty,max=100"`
+	Rating            float32  `json:"rating" binding:"omitempty,gte=0,lte=10"`
+	Description       string   `json:"description" binding:"omitempty,max=2000"`
+	CoverArtURL       string   `json:"cover_art_url" binding:"omitempty,url"`
+	CollectionFormats []string `json:"collection_formats" binding:"omitempty,dive,oneof=physical digital rom"`
 }
 
 // UpdateGameRequest represents the request to update a game
 type UpdateGameRequest struct {
-	Title       string  `json:"title" binding:"omitempty,min=1,max=255"`
-	PlatformID  uint    `json:"platform_id" binding:"omitempty,gt=0"`
-	Year        int     `json:"year" binding:"omitempty,gte=1970,lte=2030"`
-	Genre       string  `json:"genre" binding:"omitempty,max=100"`
-	Rating      float32 `json:"rating" binding:"omitempty,gte=0,lte=10"`
-	Description string  `json:"description" binding:"omitempty,max=2000"`
-	CoverArtURL string  `json:"cover_art_url" binding:"omitempty,url"`
+	Title             string   `json:"title" binding:"omitempty,min=1,max=255"`
+	PlatformID        uint     `json:"platform_id" binding:"omitempty,gt=0"`
+	Year              int      `json:"year" binding:"omitempty,gte=1970,lte=2030"`
+	Genre             string   `json:"genre" binding:"omitempty,max=100"`
+	Rating            float32  `json:"rating" binding:"omitempty,gte=0,lte=10"`
+	Description       string   `json:"description" binding:"omitempty,max=2000"`
+	CoverArtURL       string   `json:"cover_art_url" binding:"omitempty,url"`
+	CollectionFormats []string `json:"collection_formats" binding:"omitempty,dive,oneof=physical digital rom"`
 }
 
 // CreatePlatformRequest represents the request to create a platform

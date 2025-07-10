@@ -1,9 +1,40 @@
 package models
 
 import (
+	"database/sql/driver"
+	"encoding/json"
 	"time"
 	"gorm.io/gorm"
 )
+
+// CollectionFormats represents the different formats a game can be in the collection
+type CollectionFormats []string
+
+// Scan implements the sql.Scanner interface for database reads
+func (cf *CollectionFormats) Scan(value interface{}) error {
+	if value == nil {
+		*cf = CollectionFormats{}
+		return nil
+	}
+	
+	switch v := value.(type) {
+	case []byte:
+		return json.Unmarshal(v, cf)
+	case string:
+		return json.Unmarshal([]byte(v), cf)
+	}
+	
+	*cf = CollectionFormats{}
+	return nil
+}
+
+// Value implements the driver.Valuer interface for database writes
+func (cf CollectionFormats) Value() (driver.Value, error) {
+	if len(cf) == 0 {
+		return "[]", nil
+	}
+	return json.Marshal(cf)
+}
 
 type Platform struct {
 	ID           uint   `json:"id" gorm:"primaryKey"`
@@ -27,6 +58,9 @@ type Game struct {
 	BoxArtURL   string    `json:"box_art_url"`
 	PurchaseDate *time.Time `json:"purchase_date"`
 	IGDBID      int       `json:"igdb_id"`
+	
+	// Collection formats (physical, digital, rom)
+	CollectionFormats CollectionFormats `json:"collection_formats" gorm:"type:json"`
 	
 	// Completion tracking
 	CompletionStatus     string     `json:"completion_status" gorm:"default:not_started"`

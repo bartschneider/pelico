@@ -144,11 +144,26 @@ func (s *ROMScanner) findOrCreateGame(filePath string, platformID uint, fileLoca
 	result := s.db.Where("title = ? AND platform_id = ?", title, platformID).First(&existingGame)
 
 	if result.Error == nil {
-		// Game exists, add file location
+		// Game exists, add file location and ensure 'rom' format is included
 		fileLocation.GameID = existingGame.ID
 		if err := s.db.Create(fileLocation).Error; err != nil {
 			return nil, false, err
 		}
+		
+		// Check if ROM format is already included, add if not
+		hasRom := false
+		for _, format := range existingGame.CollectionFormats {
+			if format == "rom" {
+				hasRom = true
+				break
+			}
+		}
+		
+		if !hasRom {
+			existingGame.CollectionFormats = append(existingGame.CollectionFormats, "rom")
+			s.db.Save(&existingGame)
+		}
+		
 		return &existingGame, false, nil
 	}
 
@@ -156,10 +171,11 @@ func (s *ROMScanner) findOrCreateGame(filePath string, platformID uint, fileLoca
 		return nil, false, result.Error
 	}
 
-	// Create new game
+	// Create new game with ROM format
 	game := &models.Game{
-		Title:      title,
-		PlatformID: platformID,
+		Title:             title,
+		PlatformID:        platformID,
+		CollectionFormats: models.CollectionFormats{"rom"},
 	}
 
 	if err := s.db.Create(game).Error; err != nil {

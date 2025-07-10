@@ -32,8 +32,6 @@ services:
     environment:
       - PORT=8080
       - DATABASE_URL=postgres://pelico:pelico@postgres:5432/pelico?sslmode=disable
-    # Run as root to access Docker socket, app will handle privilege dropping
-    user: "0:0"
     ports:
       - "8081:8080"
     volumes:
@@ -41,8 +39,6 @@ services:
       - /mnt/roms:/data/roms:ro
       # Mount for cover art storage
       - cover_art:/app/web/static/covers
-      # Mount Docker socket for container logs access
-      - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       - pelico-network
     depends_on:

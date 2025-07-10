@@ -128,11 +128,6 @@ deploy: docker-build
 	else \
 		echo "❌ Version endpoint: FAILED"; \
 	fi
-	@if curl -s "http://$(SERVER_HOST):$(DEPLOY_PORT)/api/v1/docker/logs?lines=1" | grep -q '"container"'; then \
-		echo "✅ Docker logs endpoint: PASSED"; \
-	else \
-		echo "❌ Docker logs endpoint: FAILED"; \
-	fi
 	@echo "✅ Deployment complete! Application available at: http://$(SERVER_HOST):$(DEPLOY_PORT)"
 
 homelab-status:

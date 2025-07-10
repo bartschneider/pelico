@@ -122,8 +122,6 @@ func (s *Server) setupRoutes() {
 		api.POST("/backup/nextcloud", backupHandler.BackupToNextcloud)
 		api.GET("/backup/nextcloud/test", backupHandler.TestNextcloudConnection)
 		
-		// Docker logs
-		api.GET("/docker/logs", backupHandler.GetDockerLogs)
 		
 		// Cache status
 		api.GET("/cache/stats", s.getCacheStats)

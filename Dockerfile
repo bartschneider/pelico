@@ -24,10 +24,10 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo \
 # Final stage
 FROM alpine:latest
 
-# Install ca-certificates for SSL/TLS and Docker CLI for logs functionality
-RUN apk --no-cache add ca-certificates tzdata docker-cli
+# Install ca-certificates for SSL/TLS
+RUN apk --no-cache add ca-certificates tzdata
 
-# Create app user (staying as root for Docker socket access)
+# Create app user
 RUN addgroup -g 1001 -S pelico && \
     adduser -u 1001 -S pelico -G pelico
 
@@ -42,8 +42,8 @@ COPY --from=builder /app/web ./web
 # Create data directory for ROM scanning
 RUN mkdir -p /data/roms && chown -R pelico:pelico /data
 
-# Stay as root for Docker socket access
-# USER pelico
+# Run as pelico user
+USER pelico
 
 # Expose port
 EXPOSE 8080
