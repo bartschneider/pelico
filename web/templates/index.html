@@ -82,19 +82,19 @@
             <div class="row mb-4">
                 <div class="col-md-4">
                     <label for="platformFilter" class="form-label">Filter by Platform</label>
-                    <select class="form-select" id="platformFilter" onchange="filterGames()">
+                    <select class="form-select" id="platformFilter" onchange="debouncedFilterGames()">
                         <option value="">All Platforms</option>
                     </select>
                 </div>
                 <div class="col-md-4">
                     <label for="genreFilter" class="form-label">Filter by Genre</label>
-                    <select class="form-select" id="genreFilter" onchange="filterGames()">
+                    <select class="form-select" id="genreFilter" onchange="debouncedFilterGames()">
                         <option value="">All Genres</option>
                     </select>
                 </div>
                 <div class="col-md-4">
                     <label for="sortBy" class="form-label">Sort by</label>
-                    <select class="form-select" id="sortBy" onchange="filterGames()">
+                    <select class="form-select" id="sortBy" onchange="debouncedFilterGames()">
                         <option value="title">Title (A-Z)</option>
                         <option value="year">Year (Newest)</option>
                         <option value="rating">Rating (Highest)</option>
@@ -117,7 +117,7 @@
             </div>
 
             <!-- Active Sessions Section -->
-            <div id="activeSessionsContainer" style="display: none;">
+            <div id="activeSessionsContainer" class="d-none">
                 <div class="alert alert-info mb-4">
                     <h5><i class="fas fa-play-circle me-2"></i>Currently Playing</h5>
                     <div class="row" id="activeSessionsContent">
