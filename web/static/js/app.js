@@ -2361,6 +2361,10 @@ async function refreshDockerLogs() {
                     className = 'text-info';
                 } else if (line.toLowerCase().includes('debug')) {
                     className = 'text-muted';
+                } else if (line.includes('⚠️') || line.includes('💡') || line.includes('📋')) {
+                    className = 'text-warning';
+                } else if (line.includes('🕐')) {
+                    className = 'text-muted';
                 }
                 
                 return `<div class="${className}">${escapeHtml(line)}</div>`;
@@ -2371,12 +2375,18 @@ async function refreshDockerLogs() {
             // Scroll to bottom
             logsContent.scrollTop = logsContent.scrollHeight;
             
-            // Update info
-            logsInfo.innerHTML = `
+            // Update info with note if present
+            let infoText = `
                 <strong>Container:</strong> ${response.container} | 
                 <strong>Lines:</strong> ${response.lines} | 
                 <strong>Updated:</strong> ${new Date(response.timestamp).toLocaleString()}
             `;
+            
+            if (response.note) {
+                infoText += ` | <strong>Note:</strong> ${response.note}`;
+            }
+            
+            logsInfo.innerHTML = infoText;
         } else {
             logsContent.innerHTML = '<div class="text-center text-muted">No logs available</div>';
             logsInfo.innerHTML = '';

@@ -253,9 +253,35 @@ func (h *BackupHandler) GetDockerLogs(c *gin.Context) {
 	// Execute command
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to get Docker logs: " + err.Error(),
-			"details": string(output),
+		// If Docker is not accessible, provide helpful fallback information
+		fallbackLogs := []string{
+			"⚠️  Docker logs not accessible from within container",
+			"",
+			"📋 Alternative ways to view container logs:",
+			"",
+			"1. From your homelab server, run:",
+			"   docker logs pelico-app --tail " + lines,
+			"   docker logs pelico-postgres --tail " + lines,
+			"",
+			"2. Or use docker compose:",
+			"   cd pelico && docker compose logs -f",
+			"",
+			"3. For real-time monitoring:",
+			"   docker logs -f pelico-app",
+			"",
+			"💡 This happens because the container needs special Docker socket permissions",
+			"   to access the host Docker daemon. The application is running normally.",
+			"",
+			fmt.Sprintf("🕐 Generated at: %s", time.Now().Format("2006-01-02 15:04:05 UTC")),
+		}
+		
+		c.JSON(http.StatusOK, gin.H{
+			"container": container,
+			"lines": len(fallbackLogs),
+			"logs": fallbackLogs,
+			"timestamp": time.Now(),
+			"note": "Docker not accessible - showing help information",
+			"docker_error": err.Error(),
 		})
 		return
 	}

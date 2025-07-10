@@ -27,10 +27,9 @@ FROM alpine:latest
 # Install ca-certificates for SSL/TLS and Docker CLI for logs functionality
 RUN apk --no-cache add ca-certificates tzdata docker-cli
 
-# Create app user and add to docker group for socket access
+# Create app user (staying as root for Docker socket access)
 RUN addgroup -g 1001 -S pelico && \
-    adduser -u 1001 -S pelico -G pelico && \
-    addgroup pelico docker
+    adduser -u 1001 -S pelico -G pelico
 
 WORKDIR /app
 
