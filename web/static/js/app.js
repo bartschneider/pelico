@@ -16,11 +16,38 @@ let totalPages = 1;
 let isLoading = false;
 
 // Initialize app
-document.addEventListener('DOMContentLoaded', function() {
-    loadPlatforms();
-    loadGenres();
-    loadGames();
-    loadActiveSessions();
+document.addEventListener('DOMContentLoaded', async function() {
+    // Load state from URL first
+    const params = new URLSearchParams(window.location.search);
+    
+    await loadPlatforms();
+    await loadGenres();
+    
+    // Restore filters from URL parameters
+    if (params.get('platform')) {
+        const platformFilter = document.getElementById('platformFilter');
+        if (platformFilter) {
+            platformFilter.value = params.get('platform');
+        }
+    }
+    if (params.get('genre')) {
+        const genreFilter = document.getElementById('genreFilter');
+        if (genreFilter) {
+            genreFilter.value = params.get('genre');
+        }
+    }
+    if (params.get('completion_status')) {
+        const completionButton = document.querySelector(`[data-status="${params.get('completion_status')}"]`);
+        if (completionButton) {
+            // Remove active from all buttons first
+            document.querySelectorAll('.completion-filter').forEach(btn => btn.classList.remove('active'));
+            completionButton.classList.add('active');
+        }
+    }
+    
+    // Load games with restored filters
+    await loadGames();
+    await loadActiveSessions();
     showView('collection');
     
     // Restore preferred view
@@ -105,7 +132,30 @@ async function loadGames(page = 1, append = false) {
         isLoading = true;
         showLoadingIndicator();
         
-        const response = await apiCall(`/games?page=${page}&limit=50&sort=title`);
+        // Check if we have active filters and should use them
+        const platformFilter = document.getElementById('platformFilter')?.value;
+        const genreFilter = document.getElementById('genreFilter')?.value;
+        const completionFilter = document.querySelector('.completion-filter.active')?.dataset.status;
+        const sortBy = document.getElementById('sortBy')?.value || 'title';
+        
+        // Build API query parameters
+        const params = new URLSearchParams({
+            page: page,
+            limit: 50,
+            sort: sortBy
+        });
+        
+        if (platformFilter && platformFilter !== '') {
+            params.append('platform', platformFilter);
+        }
+        if (genreFilter && genreFilter !== '') {
+            params.append('genre', genreFilter);
+        }
+        if (completionFilter && completionFilter !== 'all') {
+            params.append('completion_status', completionFilter);
+        }
+        
+        const response = await apiCall(`/games?${params.toString()}`);
         
         if (append) {
             games = [...games, ...response.games];
@@ -117,7 +167,7 @@ async function loadGames(page = 1, append = false) {
         totalPages = response.pagination.total_pages;
         
         extractGenresFromCurrentGames();
-        updateFilterOptions();
+        updateFilterOptions(true); // Preserve current selections
         displayGames(games);
         updatePaginationControls();
     } catch (error) {
@@ -737,31 +787,51 @@ function createCompactGameCard(game) {
     return col;
 }
 
-// Filtering and sorting functions
-function filterGames() {
-    const platformFilter = document.getElementById('platformFilter').value;
-    const genreFilter = document.getElementById('genreFilter').value;
-    const sortBy = document.getElementById('sortBy').value;
-    
-    // Reset to first page when filtering
-    currentPage = 1;
-    
-    // Build API query parameters
-    const params = new URLSearchParams({
+// Unified filtering and sorting functions
+async function applyAllFilters() {
+    const filters = {
+        platform: document.getElementById('platformFilter')?.value,
+        genre: document.getElementById('genreFilter')?.value,
+        completion: document.querySelector('.completion-filter.active')?.dataset.status,
+        sort: document.getElementById('sortBy')?.value || 'title',
         page: currentPage,
-        limit: 50,
-        sort: sortBy || 'title'
+        limit: 50
+    };
+    
+    // Reset to first page when filtering (unless pagination navigation)
+    if (filters.page === 1) {
+        currentPage = 1;
+        filters.page = 1;
+    }
+    
+    // Build query params
+    const params = new URLSearchParams({ 
+        page: filters.page, 
+        limit: filters.limit,
+        sort: filters.sort 
     });
     
-    if (platformFilter) {
-        params.append('platform', platformFilter);
+    if (filters.platform && filters.platform !== '') {
+        params.append('platform', filters.platform);
     }
-    if (genreFilter) {
-        params.append('genre', genreFilter);
+    if (filters.genre && filters.genre !== '') {
+        params.append('genre', filters.genre);
+    }
+    if (filters.completion && filters.completion !== 'all') {
+        params.append('completion_status', filters.completion);
     }
     
-    // Reload games with filters
-    loadGamesWithParams(params);
+    // Save state to URL for bookmarking/sharing
+    const currentUrl = new URL(window.location);
+    currentUrl.search = params.toString();
+    window.history.replaceState(filters, '', currentUrl.toString());
+    
+    await loadGamesWithParams(params);
+}
+
+// Legacy function for backward compatibility
+function filterGames() {
+    applyAllFilters();
 }
 
 async function loadGamesWithParams(params) {
@@ -1628,7 +1698,7 @@ function updatePaginationControls() {
     const prevLi = document.createElement('li');
     prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
     prevLi.innerHTML = `
-        <a class="page-link" href="#" onclick="loadGames(${currentPage - 1}); return false;">
+        <a class="page-link" href="#" onclick="navigateToPage(${currentPage - 1}); return false;">
             <i class="fas fa-chevron-left"></i>
         </a>
     `;
@@ -1641,7 +1711,7 @@ function updatePaginationControls() {
     if (startPage > 1) {
         const firstLi = document.createElement('li');
         firstLi.className = 'page-item';
-        firstLi.innerHTML = `<a class="page-link" href="#" onclick="loadGames(1); return false;">1</a>`;
+        firstLi.innerHTML = `<a class="page-link" href="#" onclick="navigateToPage(1); return false;">1</a>`;
         paginationControls.appendChild(firstLi);
         
         if (startPage > 2) {
@@ -1655,7 +1725,7 @@ function updatePaginationControls() {
     for (let i = startPage; i <= endPage; i++) {
         const pageLi = document.createElement('li');
         pageLi.className = `page-item ${i === currentPage ? 'active' : ''}`;
-        pageLi.innerHTML = `<a class="page-link" href="#" onclick="loadGames(${i}); return false;">${i}</a>`;
+        pageLi.innerHTML = `<a class="page-link" href="#" onclick="navigateToPage(${i}); return false;">${i}</a>`;
         paginationControls.appendChild(pageLi);
     }
     
@@ -1669,7 +1739,7 @@ function updatePaginationControls() {
         
         const lastLi = document.createElement('li');
         lastLi.className = 'page-item';
-        lastLi.innerHTML = `<a class="page-link" href="#" onclick="loadGames(${totalPages}); return false;">${totalPages}</a>`;
+        lastLi.innerHTML = `<a class="page-link" href="#" onclick="navigateToPage(${totalPages}); return false;">${totalPages}</a>`;
         paginationControls.appendChild(lastLi);
     }
     
@@ -1677,11 +1747,17 @@ function updatePaginationControls() {
     const nextLi = document.createElement('li');
     nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
     nextLi.innerHTML = `
-        <a class="page-link" href="#" onclick="loadGames(${currentPage + 1}); return false;">
+        <a class="page-link" href="#" onclick="navigateToPage(${currentPage + 1}); return false;">
             <i class="fas fa-chevron-right"></i>
         </a>
     `;
     paginationControls.appendChild(nextLi);
+}
+
+// Navigation function for pagination with filters
+async function navigateToPage(page) {
+    currentPage = page;
+    await applyAllFilters();
 }
 
 // Delete operations
@@ -2140,7 +2216,7 @@ async function loadCompletionStats() {
 
 async function filterByCompletionStatus(status) {
     try {
-        // Reset pagination
+        // Reset pagination when changing completion filter
         currentPage = 1;
         
         // Update active filter button first
@@ -2150,38 +2226,21 @@ async function filterByCompletionStatus(status) {
             targetButton.classList.add('active');
         }
         
-        // If "All Games" is selected, just reload normally
-        if (status === 'all') {
-            await loadGames();
-            return;
-        }
-        
-        let filteredGames;
-        if (status === 'backlog') {
-            // Backlog includes both not_started and in_progress
-            filteredGames = await apiCall(`/games/completion/backlog`);
-        } else {
-            filteredGames = await apiCall(`/games/completion/${status}`);
-        }
-        
-        // Update global games variable and state
-        games = filteredGames;
-        totalPages = 1; // Since we're showing all filtered results on one page
-        
-        // Extract genres from filtered games and update filter options
-        extractGenresFromCurrentGames();
-        updateFilterOptions(false); // Don't preserve selection for completion filters
-        
-        displayGames(filteredGames);
-        updatePaginationControls();
+        // Use unified filter system which integrates with other filters
+        await applyAllFilters();
         
         // Show user feedback
-        const statusLabel = status === 'backlog' ? 'backlog' : 
+        const statusLabel = status === 'all' ? 'all' :
+                           status === 'backlog' ? 'backlog' : 
                            status === 'in_progress' ? 'currently playing' :
                            status === '100_percent' ? '100% completed' :
                            status.replace('_', ' ');
         
-        showToast(`Showing ${filteredGames.length} ${statusLabel} games`, 'info');
+        if (status === 'all') {
+            showToast('Showing all games', 'info');
+        } else {
+            showToast(`Filtered by ${statusLabel} status`, 'info');
+        }
     } catch (error) {
         console.error('Failed to filter games by completion status:', error);
         showToast('Failed to filter games', 'error');

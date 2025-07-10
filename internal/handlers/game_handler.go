@@ -61,6 +61,7 @@ func (h *GameHandler) GetGames(c *gin.Context) {
 	// Parse filter parameters
 	platformFilter := c.Query("platform")
 	genreFilter := c.Query("genre")
+	completionFilter := c.Query("completion_status")
 	
 	// Build base query with filters
 	baseQuery := h.db.Model(&models.Game{})
@@ -77,6 +78,15 @@ func (h *GameHandler) GetGames(c *gin.Context) {
 	// Apply genre filter
 	if genreFilter != "" && genreFilter != "all" {
 		baseQuery = baseQuery.Where("genre = ?", genreFilter)
+	}
+	
+	// Apply completion status filter
+	if completionFilter != "" && completionFilter != "all" {
+		if completionFilter == "backlog" {
+			baseQuery = baseQuery.Where("completion_status IN ?", []string{"not_started", "in_progress"})
+		} else {
+			baseQuery = baseQuery.Where("completion_status = ?", completionFilter)
+		}
 	}
 	
 	// Get total count with filters applied
@@ -121,6 +131,7 @@ func (h *GameHandler) GetGames(c *gin.Context) {
 		h.logger.LogWithContext(c, slog.LevelDebug, "games_filtered",
 			slog.String("platform_filter", platformFilter),
 			slog.String("genre_filter", genreFilter),
+			slog.String("completion_filter", completionFilter),
 			slog.Int64("filtered_total", total),
 			slog.Int("page", page))
 	}
@@ -136,8 +147,9 @@ func (h *GameHandler) GetGames(c *gin.Context) {
 			"has_prev":    page > 1,
 		},
 		"filters": gin.H{
-			"platform": platformFilter,
-			"genre":    genreFilter,
+			"platform":   platformFilter,
+			"genre":      genreFilter,
+			"completion": completionFilter,
 		},
 	})
 }
