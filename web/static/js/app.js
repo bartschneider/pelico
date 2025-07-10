@@ -19,6 +19,7 @@ let isLoading = false;
 document.addEventListener('DOMContentLoaded', function() {
     loadPlatforms();
     loadGames();
+    loadActiveSessions();
     showView('collection');
     
     // Restore preferred view
@@ -2103,111 +2104,50 @@ async function loadCompletionStats() {
 
 async function filterByCompletionStatus(status) {
     try {
-        const filteredGames = await apiCall(`/games/completion/${status}`);
+        // Reset pagination
+        currentPage = 1;
+        
+        let filteredGames;
+        if (status === 'backlog') {
+            // Backlog includes both not_started and in_progress
+            filteredGames = await apiCall(`/games/completion/backlog`);
+        } else {
+            filteredGames = await apiCall(`/games/completion/${status}`);
+        }
+        
+        // Update global games variable and state
+        games = filteredGames;
+        totalPages = 1; // Since we're showing all filtered results on one page
+        
         displayGames(filteredGames);
+        updatePaginationControls();
         
-        // Update filter indicator
+        // Update active filter button
         document.querySelectorAll('.completion-filter').forEach(btn => btn.classList.remove('active'));
-        document.querySelector(`[data-status="${status}"]`).classList.add('active');
+        const targetButton = document.querySelector(`[data-status="${status}"]`);
+        if (targetButton) {
+            targetButton.classList.add('active');
+        }
         
-        showToast(`Showing ${status.replace('_', ' ')} games`, 'info');
+        // Clear other filters to show this is a completion filter
+        document.getElementById('platformFilter').value = '';
+        document.getElementById('genreFilter').value = '';
+        document.getElementById('sortBy').value = 'title';
+        
+        // Show user feedback
+        const statusLabel = status === 'backlog' ? 'backlog' : 
+                           status === 'in_progress' ? 'currently playing' :
+                           status === '100_percent' ? '100% completed' :
+                           status.replace('_', ' ');
+        
+        showToast(`Showing ${filteredGames.length} ${statusLabel} games`, 'info');
     } catch (error) {
         console.error('Failed to filter games by completion status:', error);
         showToast('Failed to filter games', 'error');
     }
 }
 
-// Active session tracking
-let activeSessions = [];
-let activeSessionUpdateInterval;
+// Remove duplicate active session variables and functions
+// (This section was duplicated earlier in the code)
 
-async function loadActiveSessions() {
-    try {
-        activeSessions = await apiCall('/sessions/active');
-        displayActiveSessions();
-        
-        // Update every minute to show real-time duration
-        if (activeSessions.length > 0) {
-            if (!activeSessionUpdateInterval) {
-                activeSessionUpdateInterval = setInterval(loadActiveSessions, 60000); // Update every minute
-            }
-        } else {
-            // Clear interval if no active sessions
-            if (activeSessionUpdateInterval) {
-                clearInterval(activeSessionUpdateInterval);
-                activeSessionUpdateInterval = null;
-            }
-        }
-    } catch (error) {
-        console.error('Failed to load active sessions:', error);
-    }
-}
 
-function displayActiveSessions() {
-    const container = document.getElementById('activeSessionsContainer');
-    
-    if (!activeSessions || activeSessions.length === 0) {
-        container.style.display = 'none';
-        return;
-    }
-    
-    container.style.display = 'block';
-    container.innerHTML = `
-        <div class="alert alert-info mb-4">
-            <h5><i class="fas fa-play-circle"></i> Currently Playing</h5>
-            <div class="row">
-                ${activeSessions.map(session => `
-                    <div class="col-md-6 mb-2">
-                        <div class="card bg-primary text-white">
-                            <div class="card-body p-3">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <h6 class="mb-1">${session.game.title}</h6>
-                                        <small>Started: ${new Date(session.start_time).toLocaleTimeString()}</small>
-                                        <div class="mt-1">
-                                            <i class="fas fa-clock"></i> 
-                                            ${formatDuration(session.current_duration)}
-                                        </div>
-                                        ${session.game.platform ? `<small><i class="fas fa-desktop"></i> ${session.game.platform.name}</small>` : ''}
-                                    </div>
-                                    <div>
-                                        <button class="btn btn-light btn-sm" 
-                                                onclick="endActiveSession(${session.id})">
-                                            <i class="fas fa-stop"></i> End
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `).join('')}
-            </div>
-        </div>
-    `;
-}
-
-async function endActiveSession(sessionId) {
-    try {
-        await apiCall(`/sessions/${sessionId}/end`, 'POST');
-        await loadActiveSessions();
-        await loadRecentlyPlayedGames();
-        showToast('Session ended successfully', 'success');
-    } catch (error) {
-        showToast('Failed to end session: ' + error.message, 'error');
-    }
-}
-
-function formatDuration(minutes) {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    
-    if (hours > 0) {
-        return `${hours}h ${mins}m`;
-    }
-    return `${mins}m`;
-}
-
-// Auto-load active sessions on page load
-document.addEventListener('DOMContentLoaded', function() {
-    loadActiveSessions();
-});
