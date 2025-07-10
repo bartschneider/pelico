@@ -135,3 +135,5 @@ Makefile.secret
 
 # LLM coding scaffolding
 ARCHITECTURE_AUDIT*
+claude-env.sh
+pelico-enhanced*
