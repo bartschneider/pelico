@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.title}}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="/static/css/style.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-gamepad me-2"></i>Pelico
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#" onclick="showView('collection')">
+                            <i class="fas fa-list me-1"></i>Collection
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="showView('scanner')">
+                            <i class="fas fa-search me-1"></i>ROM Scanner
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="showView('sessions')">
+                            <i class="fas fa-clock me-1"></i>Play Sessions
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="showView('platforms')">
+                            <i class="fas fa-desktop me-1"></i>Platforms
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="showView('settings')">
+                            <i class="fas fa-cog me-1"></i>Settings
+                        </a>
+                    </li>
+                </ul>
+                <form class="d-flex" onsubmit="searchGames(event)">
+                    <input class="form-control me-2" type="search" id="searchInput" placeholder="Search games...">
+                    <button class="btn btn-outline-light" type="submit">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <!-- Collection View -->
+        <div id="collectionView" class="view-content">
+            <!-- Active Sessions Display -->
+            <div id="activeSessionsContainer" style="display: none;">
+                <!-- Active sessions will be loaded here -->
+            </div>
+
+            <div class="row mb-3">
+                <div class="col">
+                    <h2><i class="fas fa-list me-2"></i>Game Collection</h2>
+                </div>
+                <div class="col-auto d-flex gap-2">
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-outline-secondary active" id="tiledViewBtn" onclick="switchView('tiled')">
+                            <i class="fas fa-th"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" id="listViewBtn" onclick="switchView('list')">
+                            <i class="fas fa-list"></i>
+                        </button>
+                    </div>
+                    <button class="btn btn-primary" onclick="showAddGameModal()">
+                        <i class="fas fa-plus me-1"></i>Add Game
+                    </button>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <label for="platformFilter" class="form-label">Filter by Platform</label>
+                    <select class="form-select" id="platformFilter" onchange="filterGames()">
+                        <option value="">All Platforms</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="genreFilter" class="form-label">Filter by Genre</label>
+                    <select class="form-select" id="genreFilter" onchange="filterGames()">
+                        <option value="">All Genres</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="sortBy" class="form-label">Sort by</label>
+                    <select class="form-select" id="sortBy" onchange="filterGames()">
+                        <option value="title">Title (A-Z)</option>
+                        <option value="year">Year (Newest)</option>
+                        <option value="rating">Rating (Highest)</option>
+                        <option value="recently_played">Recently Played</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Recently Played Section -->
+            <div id="recentlyPlayedSection" style="display: none;">
+                <div class="row mb-3">
+                    <div class="col">
+                        <h4><i class="fas fa-clock me-2"></i>Recently Played</h4>
+                    </div>
+                </div>
+                <div class="row mb-4" id="recentlyPlayedGames">
+                    <!-- Recently played games will be loaded here -->
+                </div>
+                <hr>
+            </div>
+
+            <!-- Active Sessions Section -->
+            <div id="activeSessionsContainer" style="display: none;">
+                <div class="alert alert-info mb-4">
+                    <h5><i class="fas fa-play-circle me-2"></i>Currently Playing</h5>
+                    <div class="row" id="activeSessionsContent">
+                        <!-- Active sessions will be loaded here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Completion Statistics -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6><i class="fas fa-chart-pie me-2"></i>Collection Statistics</h6>
+                </div>
+                <div class="card-body">
+                    <div id="completionStats">
+                        <!-- Stats will be loaded here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Completion Filters -->
+            <div class="row mb-3">
+                <div class="col">
+                    <div class="btn-group me-3" role="group">
+                        <button type="button" class="btn btn-outline-secondary completion-filter active" 
+                                data-status="all" onclick="loadGames(); document.querySelectorAll('.completion-filter').forEach(b => b.classList.remove('active')); this.classList.add('active');">
+                            All Games
+                        </button>
+                        <button type="button" class="btn btn-outline-primary completion-filter" 
+                                data-status="backlog" onclick="filterByCompletionStatus('backlog')">
+                            <i class="fas fa-list"></i> Backlog
+                        </button>
+                        <button type="button" class="btn btn-outline-warning completion-filter" 
+                                data-status="in_progress" onclick="filterByCompletionStatus('in_progress')">
+                            <i class="fas fa-spinner"></i> Playing
+                        </button>
+                        <button type="button" class="btn btn-outline-success completion-filter" 
+                                data-status="completed" onclick="filterByCompletionStatus('completed')">
+                            <i class="fas fa-check-circle"></i> Completed
+                        </button>
+                        <button type="button" class="btn btn-outline-warning completion-filter" 
+                                data-status="100_percent" onclick="filterByCompletionStatus('100_percent')">
+                            <i class="fas fa-trophy"></i> 100%
+                        </button>
+                        <button type="button" class="btn btn-outline-danger completion-filter" 
+                                data-status="abandoned" onclick="filterByCompletionStatus('abandoned')">
+                            <i class="fas fa-times-circle"></i> Abandoned
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- All Games Section -->
+            <div class="row mb-3">
+                <div class="col">
+                    <h4><i class="fas fa-gamepad me-2"></i>All Games</h4>
+                </div>
+            </div>
+            
+            <!-- Tiled View -->
+            <div class="row" id="gamesGrid">
+                <!-- Games will be loaded here -->
+            </div>
+            
+            <!-- List View -->
+            <div id="gamesList" style="display: none;">
+                <!-- Games list will be loaded here -->
+            </div>
+            
+            <!-- Pagination Controls -->
+            <div class="d-flex justify-content-between align-items-center mt-4">
+                <div id="paginationInfo" class="text-muted">
+                    <!-- Pagination info will be loaded here -->
+                </div>
+                <nav>
+                    <ul class="pagination mb-0" id="paginationControls">
+                        <!-- Pagination buttons will be loaded here -->
+                    </ul>
+                </nav>
+            </div>
+            </div>
+        </div>
+
+        <!-- Scanner View -->
+        <div id="scannerView" class="view-content" style="display: none;">
+            <div class="row">
+                <div class="col-md-8">
+                    <h2><i class="fas fa-search me-2"></i>ROM Scanner</h2>
+                    <div class="card">
+                        <div class="card-body">
+                            <form onsubmit="scanDirectory(event)">
+                                <div class="mb-3">
+                                    <label for="directoryPath" class="form-label">Directory Path</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="directoryPath" required 
+                                               placeholder="/path/to/roms" readonly>
+                                        <button type="button" class="btn btn-outline-secondary" onclick="showDirectoryBrowser()">
+                                            <i class="fas fa-folder-open"></i> Browse
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="serverLocation" class="form-label">Server Location</label>
+                                    <input type="text" class="form-control" id="serverLocation" required 
+                                           placeholder="Home Server">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="platformSelect" class="form-label">Platform</label>
+                                    <select class="form-select" id="platformSelect" required>
+                                        <option value="">Select Platform</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3 form-check">
+                                    <input type="checkbox" class="form-check-input" id="recursive">
+                                    <label class="form-check-label" for="recursive">
+                                        Scan subdirectories recursively
+                                    </label>
+                                </div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-search me-1"></i>Start Scan
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <h4>Post-Scan Operations</h4>
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-info" onclick="updateMetadataBatch()">
+                            <i class="fas fa-cloud-download-alt me-1"></i>Update Game Metadata
+                        </button>
+                        <button class="btn btn-warning" onclick="findDuplicates()">
+                            <i class="fas fa-copy me-1"></i>Find Duplicates
+                        </button>
+                    </div>
+                    <div id="duplicatesResult" class="mt-3"></div>
+                    <div id="metadataUpdateResult" class="mt-3"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sessions View -->
+        <div id="sessionsView" class="view-content" style="display: none;">
+            <h2><i class="fas fa-clock me-2"></i>Play Sessions</h2>
+            <div id="sessionsContent">
+                <!-- Sessions will be loaded here -->
+            </div>
+        </div>
+
+        <!-- Platforms View -->
+        <div id="platformsView" class="view-content" style="display: none;">
+            <div class="row mb-3">
+                <div class="col">
+                    <h2><i class="fas fa-desktop me-2"></i>Platforms</h2>
+                </div>
+                <div class="col-auto">
+                    <button class="btn btn-primary" onclick="showAddPlatformModal()">
+                        <i class="fas fa-plus me-1"></i>Add Platform
+                    </button>
+                </div>
+            </div>
+            <div id="platformsList">
+                <!-- Platforms will be loaded here -->
+            </div>
+        </div>
+
+        <!-- Settings View -->
+        <div id="settingsView" class="view-content" style="display: none;">
+            <div class="row mb-3">
+                <div class="col">
+                    <h2><i class="fas fa-cog me-2"></i>Settings</h2>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-lg-8">
+                    <!-- Backup/Restore Section -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5><i class="fas fa-cloud-download-alt me-2"></i>Backup & Restore</h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted">Protect your game collection data with regular backups. Export your entire database or restore from a previous backup.</p>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6>Export Data</h6>
+                                    <div class="d-grid gap-2 mb-3">
+                                        <button class="btn btn-primary" onclick="exportFullBackup()">
+                                            <i class="fas fa-download me-1"></i>Download Full Backup
+                                        </button>
+                                        <button class="btn btn-outline-primary" onclick="exportGamesOnly()">
+                                            <i class="fas fa-gamepad me-1"></i>Download Games Only
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6>Import Data</h6>
+                                    <div class="mb-3">
+                                        <input type="file" class="form-control" id="backupFile" accept=".json">
+                                        <div class="form-text">Select a Pelico backup file (.json)</div>
+                                    </div>
+                                    <button class="btn btn-warning" onclick="importBackup()">
+                                        <i class="fas fa-upload me-1"></i>Restore Backup
+                                    </button>
+                                    <div class="mt-2">
+                                        <small class="text-danger">
+                                            <i class="fas fa-exclamation-triangle"></i>
+                                            Warning: This will replace all existing data!
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <hr>
+                            
+                            <!-- Nextcloud Backup Section -->
+                            <div id="nextcloudSection" class="mb-3">
+                                <h6><i class="fas fa-cloud me-1"></i>Nextcloud Backup</h6>
+                                <div id="nextcloudStatus" class="mb-2">
+                                    <span class="badge bg-secondary">Checking...</span>
+                                </div>
+                                <div class="row" id="nextcloudControls" style="display: none;">
+                                    <div class="col-md-6">
+                                        <button class="btn btn-info" onclick="backupToNextcloud()">
+                                            <i class="fas fa-cloud-upload-alt me-1"></i>Backup to Nextcloud
+                                        </button>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <button class="btn btn-outline-secondary" onclick="testNextcloudConnection()">
+                                            <i class="fas fa-check me-1"></i>Test Connection
+                                        </button>
+                                    </div>
+                                </div>
+                                <div id="nextcloudMessage" class="mt-2"></div>
+                            </div>
+                            
+                            <hr>
+                            
+                            <div id="backupInfo">
+                                <h6>Database Statistics</h6>
+                                <div class="row text-center" id="backupStats">
+                                    <div class="col-3">
+                                        <div class="fs-4 text-primary">-</div>
+                                        <small class="text-muted">Games</small>
+                                    </div>
+                                    <div class="col-3">
+                                        <div class="fs-4 text-success">-</div>
+                                        <small class="text-muted">Platforms</small>
+                                    </div>
+                                    <div class="col-3">
+                                        <div class="fs-4 text-info">-</div>
+                                        <small class="text-muted">Sessions</small>
+                                    </div>
+                                    <div class="col-3">
+                                        <div class="fs-4 text-warning">-</div>
+                                        <small class="text-muted">Files</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Application Info -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-info-circle me-2"></i>Application Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <dl class="row">
+                                <dt class="col-sm-3">Version</dt>
+                                <dd class="col-sm-9">Pelico 1.0</dd>
+                                
+                                <dt class="col-sm-3">Database</dt>
+                                <dd class="col-sm-9">PostgreSQL</dd>
+                                
+                                <dt class="col-sm-3">Metadata Source</dt>
+                                <dd class="col-sm-9">IGDB (Internet Game Database)</dd>
+                                
+                                <dt class="col-sm-3">ROM Storage</dt>
+                                <dd class="col-sm-9">Network Share (SMB)</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4">
+                    <!-- Quick Actions -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5><i class="fas fa-bolt me-2"></i>Quick Actions</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-outline-secondary" onclick="refreshAllData()">
+                                    <i class="fas fa-sync me-1"></i>Refresh All Data
+                                </button>
+                                <button class="btn btn-outline-info" onclick="showView('scanner')">
+                                    <i class="fas fa-search me-1"></i>Scan ROMs
+                                </button>
+                                <button class="btn btn-outline-warning" onclick="updateAllMetadata()">
+                                    <i class="fas fa-cloud-download-alt me-1"></i>Update All Metadata
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Tips -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-lightbulb me-2"></i>Tips</h5>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-unstyled">
+                                <li class="mb-2">
+                                    <i class="fas fa-check text-success me-1"></i>
+                                    Regular backups protect your data
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-check text-success me-1"></i>
+                                    Use ROM scanner for bulk imports
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-check text-success me-1"></i>
+                                    Log play sessions for statistics
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-check text-success me-1"></i>
+                                    Metadata updates improve accuracy
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Game Modal -->
+    <div class="modal fade" id="addGameModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New Game</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Step 1: Search for game -->
+                    <div id="gameSearchStep">
+                        <h6>Search for Game</h6>
+                        <div class="mb-3">
+                            <label for="gameSearchInput" class="form-label">Game Title</label>
+                            <input type="text" class="form-control" id="gameSearchInput" 
+                                   placeholder="Start typing to search..." oninput="searchGamesAsYouType()">
+                            <div class="form-text">Search online databases for accurate game information</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="searchPlatform" class="form-label">Platform</label>
+                            <select class="form-select" id="searchPlatform">
+                                <option value="">Any Platform</option>
+                            </select>
+                        </div>
+                        <div id="gameSearchResults" class="mt-3" style="display: none;">
+                            <h6>Search Results:</h6>
+                            <div id="searchResultsList"></div>
+                        </div>
+                        <div class="mt-3">
+                            <button type="button" class="btn btn-outline-secondary" onclick="showManualGameForm()">
+                                <i class="fas fa-edit"></i> Add Manually Instead
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Manual game form (fallback) -->
+                    <div id="manualGameStep" style="display: none;">
+                        <h6>Manual Game Entry</h6>
+                        <form id="addGameForm">
+                            <div class="mb-3">
+                                <label for="gameTitle" class="form-label">Title</label>
+                                <input type="text" class="form-control" id="gameTitle" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="gamePlatform" class="form-label">Platform</label>
+                                <select class="form-select" id="gamePlatform" required>
+                                    <option value="">Select Platform</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="gameYear" class="form-label">Year</label>
+                                <input type="number" class="form-control" id="gameYear">
+                            </div>
+                            <div class="mb-3">
+                                <label for="gameGenre" class="form-label">Genre</label>
+                                <input type="text" class="form-control" id="gameGenre">
+                            </div>
+                            <div class="mb-3">
+                                <label for="gameDescription" class="form-label">Description</label>
+                                <textarea class="form-control" id="gameDescription" rows="3"></textarea>
+                            </div>
+                        </form>
+                        <div class="mt-3">
+                            <button type="button" class="btn btn-outline-secondary" onclick="showGameSearchStep()">
+                                <i class="fas fa-search"></i> Back to Search
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="addGameBtn" onclick="addGame()" style="display: none;">
+                        Add Game
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Game Modal -->
+    <div class="modal fade" id="editGameModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Game</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editGameForm">
+                        <input type="hidden" id="editGameId">
+                        <div class="mb-3">
+                            <label for="editGameTitle" class="form-label">Title</label>
+                            <input type="text" class="form-control" id="editGameTitle" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editGamePlatform" class="form-label">Platform</label>
+                            <select class="form-select" id="editGamePlatform" required>
+                                <option value="">Select Platform</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editGameYear" class="form-label">Year</label>
+                            <input type="number" class="form-control" id="editGameYear">
+                        </div>
+                        <div class="mb-3">
+                            <label for="editGameGenre" class="form-label">Genre</label>
+                            <input type="text" class="form-control" id="editGameGenre">
+                        </div>
+                        <div class="mb-3">
+                            <label for="editGameRating" class="form-label">Rating (0-10)</label>
+                            <input type="number" class="form-control" id="editGameRating" min="0" max="10" step="0.1">
+                        </div>
+                        <div class="mb-3">
+                            <label for="editGameDescription" class="form-label">Description</label>
+                            <textarea class="form-control" id="editGameDescription" rows="3"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editGameCoverUrl" class="form-label">Cover Art URL</label>
+                            <input type="url" class="form-control" id="editGameCoverUrl">
+                        </div>
+                        <div class="mb-3">
+                            <label for="editGamePurchaseDate" class="form-label">Purchase Date</label>
+                            <input type="date" class="form-control" id="editGamePurchaseDate">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="updateGame()">Update Game</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Play Session Modal -->
+    <div class="modal fade" id="addSessionModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Log Play Session</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addSessionForm">
+                        <input type="hidden" id="sessionGameId">
+                        <div class="mb-3">
+                            <h6 id="sessionGameTitle"></h6>
+                        </div>
+                        <div class="mb-3">
+                            <label for="sessionStartTime" class="form-label">Start Time</label>
+                            <input type="datetime-local" class="form-control" id="sessionStartTime" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="sessionEndTime" class="form-label">End Time (optional)</label>
+                            <input type="datetime-local" class="form-control" id="sessionEndTime">
+                            <div class="form-text">Leave empty for ongoing session</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="sessionRating" class="form-label">Session Rating (1-10)</label>
+                            <select class="form-select" id="sessionRating">
+                                <option value="">No rating</option>
+                                <option value="10">10 - Excellent</option>
+                                <option value="9">9 - Great</option>
+                                <option value="8">8 - Very Good</option>
+                                <option value="7">7 - Good</option>
+                                <option value="6">6 - Fair</option>
+                                <option value="5">5 - Average</option>
+                                <option value="4">4 - Below Average</option>
+                                <option value="3">3 - Poor</option>
+                                <option value="2">2 - Bad</option>
+                                <option value="1">1 - Terrible</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="sessionNotes" class="form-label">Notes</label>
+                            <textarea class="form-control" id="sessionNotes" rows="3" 
+                                      placeholder="How was this gaming session? Any achievements, progress, or thoughts?"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="addPlaySession()">Log Session</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Play Session Modal -->
+    <div class="modal fade" id="editSessionModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Play Session</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editSessionForm">
+                        <input type="hidden" id="editSessionId">
+                        <div class="mb-3">
+                            <h6 id="editSessionGameTitle"></h6>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editSessionStartTime" class="form-label">Start Time</label>
+                            <input type="datetime-local" class="form-control" id="editSessionStartTime" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editSessionEndTime" class="form-label">End Time (optional)</label>
+                            <input type="datetime-local" class="form-control" id="editSessionEndTime">
+                            <div class="form-text">Leave empty for ongoing session</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editSessionRating" class="form-label">Session Rating (1-10)</label>
+                            <select class="form-select" id="editSessionRating">
+                                <option value="">No rating</option>
+                                <option value="10">10 - Excellent</option>
+                                <option value="9">9 - Great</option>
+                                <option value="8">8 - Very Good</option>
+                                <option value="7">7 - Good</option>
+                                <option value="6">6 - Fair</option>
+                                <option value="5">5 - Average</option>
+                                <option value="4">4 - Below Average</option>
+                                <option value="3">3 - Poor</option>
+                                <option value="2">2 - Bad</option>
+                                <option value="1">1 - Terrible</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editSessionNotes" class="form-label">Notes</label>
+                            <textarea class="form-control" id="editSessionNotes" rows="3" 
+                                      placeholder="How was this gaming session? Any achievements, progress, or thoughts?"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="updatePlaySession()">Update Session</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Platform Modal -->
+    <div class="modal fade" id="addPlatformModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New Platform</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addPlatformForm">
+                        <div class="mb-3">
+                            <label for="platformName" class="form-label">Name</label>
+                            <input type="text" class="form-control" id="platformName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="platformManufacturer" class="form-label">Manufacturer</label>
+                            <input type="text" class="form-control" id="platformManufacturer">
+                        </div>
+                        <div class="mb-3">
+                            <label for="platformYear" class="form-label">Release Year</label>
+                            <input type="number" class="form-control" id="platformYear">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="addPlatform()">Add Platform</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Platform Modal -->
+    <div class="modal fade" id="editPlatformModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Platform</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editPlatformForm">
+                        <input type="hidden" id="editPlatformId">
+                        <div class="mb-3">
+                            <label for="editPlatformName" class="form-label">Name</label>
+                            <input type="text" class="form-control" id="editPlatformName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editPlatformManufacturer" class="form-label">Manufacturer</label>
+                            <input type="text" class="form-control" id="editPlatformManufacturer">
+                        </div>
+                        <div class="mb-3">
+                            <label for="editPlatformYear" class="form-label">Release Year</label>
+                            <input type="number" class="form-control" id="editPlatformYear">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="updatePlatform()">Update Platform</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Directory Browser Modal -->
+    <div class="modal fade" id="directoryBrowserModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-folder-open me-2"></i>Select Directory
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="fas fa-folder"></i>
+                            </span>
+                            <input type="text" class="form-control" id="currentPath" readonly>
+                            <button type="button" class="btn btn-outline-secondary" onclick="navigateToPath('/')">
+                                <i class="fas fa-home"></i> Root
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="directory-browser" style="max-height: 400px; overflow-y: auto;">
+                        <div id="directoryEntries">
+                            <div class="text-center py-4">
+                                <i class="fas fa-spinner fa-spin fa-2x"></i>
+                                <p class="mt-2">Loading directories...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="selectDirectoryBtn" onclick="selectCurrentDirectory()">
+                        Select This Directory
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Details Modal -->
+    <div class="modal fade" id="gameDetailsModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-gamepad me-2"></i><span id="detailGameTitle"></span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <!-- Cover Art Column -->
+                        <div class="col-md-4 text-center">
+                            <div id="detailCoverArt" class="mb-3">
+                                <img id="detailCoverImage" src="" alt="Game Cover" 
+                                     class="img-fluid rounded shadow" style="max-height: 60vh; display: none;">
+                                <div id="detailNoCover" class="bg-light rounded d-flex align-items-center justify-content-center" 
+                                     style="height: 300px; display: none;">
+                                    <i class="fas fa-gamepad fa-4x text-muted"></i>
+                                </div>
+                            </div>
+                            
+                            <!-- Action Buttons -->
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-primary" onclick="editGameFromDetails()">
+                                    <i class="fas fa-edit me-1"></i>Edit Game
+                                </button>
+                                <button class="btn btn-info" onclick="fetchMetadataFromDetails()">
+                                    <i class="fas fa-download me-1"></i>Update Metadata
+                                </button>
+                                <button class="btn btn-success" onclick="logSessionFromDetails()">
+                                    <i class="fas fa-play me-1"></i>Log Play Session
+                                </button>
+                                <button class="btn btn-danger" onclick="deleteGameFromDetails()">
+                                    <i class="fas fa-trash me-1"></i>Delete Game
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Game Information Column -->
+                        <div class="col-md-8">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <h6><i class="fas fa-desktop me-1"></i>Platform</h6>
+                                    <p id="detailPlatform" class="text-muted">-</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6><i class="fas fa-calendar me-1"></i>Year</h6>
+                                    <p id="detailYear" class="text-muted">-</p>
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <h6><i class="fas fa-tags me-1"></i>Genre</h6>
+                                    <p id="detailGenre" class="text-muted">-</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6><i class="fas fa-star me-1"></i>Rating</h6>
+                                    <div id="detailRating">-</div>
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <h6><i class="fas fa-shopping-cart me-1"></i>Purchase Date</h6>
+                                    <p id="detailPurchaseDate" class="text-muted">-</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6><i class="fas fa-hdd me-1"></i>Files</h6>
+                                    <p id="detailFiles" class="text-muted">-</p>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <h6><i class="fas fa-align-left me-1"></i>Description</h6>
+                                <p id="detailDescription" class="text-muted">-</p>
+                            </div>
+                            
+                            <!-- Recent Play Sessions -->
+                            <div id="detailPlaySessions">
+                                <h6><i class="fas fa-clock me-1"></i>Recent Play Sessions</h6>
+                                <div id="detailSessionsList">
+                                    <p class="text-muted">No play sessions recorded</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Completion Status Modal -->
+    <div class="modal fade" id="completionModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Update Completion Status</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="completionForm">
+                        <input type="hidden" id="completionGameId">
+                        <div class="mb-3">
+                            <h6 id="completionGameTitle"></h6>
+                        </div>
+                        <div class="mb-3">
+                            <label for="completionStatus" class="form-label">Completion Status</label>
+                            <select class="form-select" id="completionStatus" required>
+                                <option value="not_started">Not Started</option>
+                                <option value="in_progress">Playing</option>
+                                <option value="completed">Completed</option>
+                                <option value="100_percent">100% Complete</option>
+                                <option value="abandoned">Abandoned</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="completionPercentage" class="form-label">
+                                Completion Percentage: <span id="percentageLabel">0%</span>
+                            </label>
+                            <input type="range" class="form-range" id="completionPercentage" 
+                                   min="0" max="100" value="0" oninput="updatePercentageLabel()">
+                        </div>
+                        <div class="mb-3">
+                            <label for="completionNotes" class="form-label">Notes</label>
+                            <textarea class="form-control" id="completionNotes" rows="3"
+                                      placeholder="Final thoughts, ending achieved, difficulty, etc."></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="updateCompletionStatus()">Update Status</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: pelico-postgres
+    environment:
+      POSTGRES_DB: pelico
+      POSTGRES_USER: pelico
+      POSTGRES_PASSWORD: pelico
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "5432:5432"
+    networks:
+      - pelico-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pelico -d pelico"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Pelico Application
+  pelico:
+    image: pelico:latest
+    container_name: pelico-app
+    environment:
+      - PORT=8080
+      - DATABASE_URL=postgres://pelico:pelico@postgres:5432/pelico?sslmode=disable
+      - TWITCH_CLIENT_ID=${TWITCH_CLIENT_ID:-}
+      - TWITCH_CLIENT_SECRET=${TWITCH_CLIENT_SECRET:-}
+    ports:
+      - "8081:8080"
+    volumes:
+      # Mount ROM collection from host-mounted network share
+      - /mnt/roms:/data/roms:ro
+      # Mount for cover art storage
+      - cover_art:/app/web/static/covers
+    networks:
+      - pelico-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  postgres_data:
+    driver: local
+  cover_art:
+    driver: local
+
+networks:
+  pelico-network:
+    driver: bridge

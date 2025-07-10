@@ -1,0 +1,131 @@
+# Binaries
+pelico
+pelico.exe
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Go build artifacts
+*.o
+*.a
+*.test
+*.prof
+*.out
+
+# Go module cache
+go.sum
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment files - CRITICAL: Protect credentials
+.env
+.env.*
+config.env
+settings.json
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+data/
+database/
+
+# Log files
+*.log
+logs/
+pelico.log
+
+# Backup files
+backups/
+*.backup
+*.bak
+
+# Docker volumes and data
+docker-compose.override.yml
+postgres_data/
+uploads/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Coverage reports
+coverage.out
+coverage.html
+
+# Vendor directory (if using Go modules, this should be ignored)
+vendor/
+
+# Air live reload tool
+.air.toml
+tmp/
+
+# Build artifacts
+build/
+dist/
+
+# Configuration files that might contain sensitive data
+config.yaml
+config.yml
+config.json
+secrets.yaml
+secrets.yml
+
+# Nextcloud/WebDAV credentials
+nextcloud.config
+webdav.config
+
+# IGDB/Twitch API credentials  
+igdb.config
+twitch.config
+api.config
+
+# Any file ending in .secret or .private
+*.secret
+*.private
+*.key
+*.pem
+*.p12
+
+# Local development overrides
+docker-compose.local.yml
+Makefile.local
+
+# Test databases
+test.db
+*_test.db
+
+# Documentation build artifacts
+docs/_build/
+docs/dist/
+
+# Node modules (if any frontend build tools are added)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local configuration examples (keep templates, ignore actual configs)
+!config.example.env
+!docker-compose.example.yml
+!settings.example.json
+
+# Makefile with credentials (if accidentally created)
+Makefile.local
+Makefile.secret

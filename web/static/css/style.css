@@ -1,0 +1,228 @@
+/* Custom styles for Pelico */
+
+.view-content {
+    transition: opacity 0.3s ease;
+}
+
+.game-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    height: 100%;
+}
+
+.game-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.game-cover {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 3rem;
+}
+
+.game-cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.platform-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(0,0,0,0.7);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-size: 0.8rem;
+}
+
+.rating-stars {
+    color: #ffc107;
+}
+
+.session-card {
+    border-left: 4px solid #007bff;
+}
+
+.session-duration {
+    font-weight: bold;
+    color: #28a745;
+}
+
+.duplicate-group {
+    border-left: 4px solid #dc3545;
+    margin-bottom: 15px;
+}
+
+.file-path {
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    background: #f8f9fa;
+    padding: 5px;
+    border-radius: 3px;
+}
+
+.scan-progress {
+    display: none;
+}
+
+.loading-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(255,255,255,.3);
+    border-radius: 50%;
+    border-top-color: #fff;
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.navbar-brand {
+    font-weight: bold;
+    font-size: 1.5rem;
+}
+
+.stats-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+}
+
+.stats-number {
+    font-size: 2rem;
+    font-weight: bold;
+}
+
+.btn-group-actions {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.game-card:hover .btn-group-actions {
+    opacity: 1;
+}
+
+.modal-body .form-control:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+/* Dark theme for code/file paths */
+.code-block {
+    background: #2d3748;
+    color: #e2e8f0;
+    padding: 1rem;
+    border-radius: 8px;
+    font-family: 'Courier New', monospace;
+    white-space: pre-wrap;
+    margin: 10px 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .game-card {
+        margin-bottom: 20px;
+    }
+    
+    .navbar-nav {
+        margin-top: 10px;
+    }
+    
+    .search-form {
+        margin-top: 10px;
+        width: 100%;
+    }
+}
+
+/* Platform icons */
+.platform-icon {
+    width: 24px;
+    height: 24px;
+    margin-right: 8px;
+}
+
+/* Session timing */
+.session-time {
+    font-size: 0.9rem;
+    color: #6c757d;
+}
+
+/* Toast notifications */
+.toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1055;
+}
+
+/* Improved cards */
+.card {
+    border: none;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    transition: box-shadow 0.3s ease;
+}
+
+.card:hover {
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+}
+
+/* Search result cards */
+.search-result-card {
+    transition: all 0.2s ease;
+    border: 1px solid #e0e0e0;
+}
+
+.search-result-card:hover {
+    border-color: #667eea;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+}
+
+/* Search results container */
+#gameSearchResults {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 15px;
+    background: #f8f9fa;
+}
+
+/* Cover art in search results */
+.search-result-card img {
+    border-radius: 4px;
+    object-fit: cover;
+}
+
+/* Search input improvements */
+#gameSearchInput {
+    border: 2px solid #e0e0e0;
+    transition: border-color 0.3s ease;
+}
+
+#gameSearchInput:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+/* Loading states */
+.search-loading {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-left: 10px;
+}
