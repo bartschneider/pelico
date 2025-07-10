@@ -27,11 +27,11 @@ services:
   pelico:
     image: pelico:latest
     container_name: pelico-app
+    env_file:
+      - .env
     environment:
       - PORT=8080
       - DATABASE_URL=postgres://pelico:pelico@postgres:5432/pelico?sslmode=disable
-      - TWITCH_CLIENT_ID=${TWITCH_CLIENT_ID:-}
-      - TWITCH_CLIENT_SECRET=${TWITCH_CLIENT_SECRET:-}
     ports:
       - "8081:8080"
     volumes:
