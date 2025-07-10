@@ -213,9 +213,21 @@ async function loadRecentlyPlayedGames() {
 let activeSessions = [];
 let activeSessionsRefreshInterval;
 
+// Debouncing for performance optimization
+let filterDebounceTimeout;
+const FILTER_DEBOUNCE_DELAY = 300; // 300ms delay
+
 async function loadActiveSessions() {
     try {
+        console.log('Loading active sessions...');
         activeSessions = await apiCall('/sessions/active');
+        
+        // Validate response
+        if (!Array.isArray(activeSessions)) {
+            console.warn('Active sessions response is not an array, defaulting to empty array');
+            activeSessions = [];
+        }
+        
         displayActiveSessions();
         
         // Set up auto-refresh if there are active sessions
@@ -224,15 +236,22 @@ async function loadActiveSessions() {
                 clearInterval(activeSessionsRefreshInterval);
             }
             activeSessionsRefreshInterval = setInterval(loadActiveSessions, 60000); // Refresh every minute
+            console.log(`Auto-refresh set up for ${activeSessions.length} active sessions`);
         } else {
             if (activeSessionsRefreshInterval) {
                 clearInterval(activeSessionsRefreshInterval);
                 activeSessionsRefreshInterval = null;
+                console.log('No active sessions, auto-refresh disabled');
             }
         }
     } catch (error) {
         console.error('Failed to load active sessions:', error);
-        document.getElementById('activeSessionsContainer').style.display = 'none';
+        // Don't hide the container immediately - might be a temporary network issue
+        // showToast('Unable to load active sessions', 'warning');
+        
+        // Set empty array and display (which will hide container)
+        activeSessions = [];
+        displayActiveSessions();
     }
 }
 
@@ -789,44 +808,66 @@ function createCompactGameCard(game) {
 
 // Unified filtering and sorting functions
 async function applyAllFilters() {
-    const filters = {
-        platform: document.getElementById('platformFilter')?.value,
-        genre: document.getElementById('genreFilter')?.value,
-        completion: document.querySelector('.completion-filter.active')?.dataset.status,
-        sort: document.getElementById('sortBy')?.value || 'title',
-        page: currentPage,
-        limit: 50
-    };
-    
-    // Reset to first page when filtering (unless pagination navigation)
-    if (filters.page === 1) {
-        currentPage = 1;
-        filters.page = 1;
+    // Prevent multiple simultaneous filter operations
+    if (isLoading) {
+        console.log('Filter operation already in progress, skipping...');
+        return;
     }
     
-    // Build query params
-    const params = new URLSearchParams({ 
-        page: filters.page, 
-        limit: filters.limit,
-        sort: filters.sort 
-    });
-    
-    if (filters.platform && filters.platform !== '') {
-        params.append('platform', filters.platform);
+    try {
+        const filters = {
+            platform: document.getElementById('platformFilter')?.value,
+            genre: document.getElementById('genreFilter')?.value,
+            completion: document.querySelector('.completion-filter.active')?.dataset.status,
+            sort: document.getElementById('sortBy')?.value || 'title',
+            page: currentPage,
+            limit: 50
+        };
+        
+        // Reset to first page when filtering (unless pagination navigation)
+        if (filters.page === 1) {
+            currentPage = 1;
+            filters.page = 1;
+        }
+        
+        // Build query params
+        const params = new URLSearchParams({ 
+            page: filters.page, 
+            limit: filters.limit,
+            sort: filters.sort 
+        });
+        
+        if (filters.platform && filters.platform !== '') {
+            params.append('platform', filters.platform);
+        }
+        if (filters.genre && filters.genre !== '') {
+            params.append('genre', filters.genre);
+        }
+        if (filters.completion && filters.completion !== 'all') {
+            params.append('completion_status', filters.completion);
+        }
+        
+        // Save state to URL for bookmarking/sharing
+        const currentUrl = new URL(window.location);
+        currentUrl.search = params.toString();
+        window.history.replaceState(filters, '', currentUrl.toString());
+        
+        await loadGamesWithParams(params);
+    } catch (error) {
+        console.error('Failed to apply filters:', error);
+        showToast('Failed to apply filters: ' + error.message, 'error');
     }
-    if (filters.genre && filters.genre !== '') {
-        params.append('genre', filters.genre);
-    }
-    if (filters.completion && filters.completion !== 'all') {
-        params.append('completion_status', filters.completion);
+}
+
+// Debounced filter function for performance
+function debouncedFilterGames() {
+    if (filterDebounceTimeout) {
+        clearTimeout(filterDebounceTimeout);
     }
     
-    // Save state to URL for bookmarking/sharing
-    const currentUrl = new URL(window.location);
-    currentUrl.search = params.toString();
-    window.history.replaceState(filters, '', currentUrl.toString());
-    
-    await loadGamesWithParams(params);
+    filterDebounceTimeout = setTimeout(() => {
+        applyAllFilters();
+    }, FILTER_DEBOUNCE_DELAY);
 }
 
 // Legacy function for backward compatibility
@@ -843,6 +884,11 @@ async function loadGamesWithParams(params) {
         
         const response = await apiCall(`/games?${params.toString()}`);
         
+        // Validate response structure
+        if (!response || !response.games || !response.pagination) {
+            throw new Error('Invalid response structure from server');
+        }
+        
         games = response.games;
         currentPage = response.pagination.page;
         totalPages = response.pagination.total_pages;
@@ -851,9 +897,23 @@ async function loadGamesWithParams(params) {
         updateFilterOptions(true); // Preserve current filter selections
         displayGames(games);
         updatePaginationControls();
+        
+        // Show success feedback for filtered results
+        if (params.get('platform') || params.get('genre') || params.get('completion_status')) {
+            const activeFilters = [];
+            if (params.get('platform')) activeFilters.push('platform');
+            if (params.get('genre')) activeFilters.push('genre');
+            if (params.get('completion_status')) activeFilters.push('status');
+            
+            console.log(`Loaded ${games.length} games with ${activeFilters.join(', ')} filters applied`);
+        }
     } catch (error) {
         console.error('Failed to load games:', error);
-        showToast('Failed to load games', 'error');
+        showToast('Failed to load games: ' + error.message, 'error');
+        
+        // Show fallback state
+        games = [];
+        displayGames(games);
     } finally {
         isLoading = false;
         hideLoadingIndicator();
@@ -1756,6 +1816,18 @@ function updatePaginationControls() {
 
 // Navigation function for pagination with filters
 async function navigateToPage(page) {
+    // Validate page number
+    if (!page || page < 1 || page > totalPages) {
+        console.warn(`Invalid page number: ${page}. Valid range: 1-${totalPages}`);
+        return;
+    }
+    
+    // Prevent navigation during loading
+    if (isLoading) {
+        console.log('Navigation blocked: loading in progress');
+        return;
+    }
+    
     currentPage = page;
     await applyAllFilters();
 }
@@ -2106,28 +2178,7 @@ async function testNextcloudConnection() {
     }
 }
 
-// Completion tracking functions
-function renderCompletionStatus(game) {
-    const statuses = {
-        'not_started': { icon: 'fa-circle-notch', color: 'secondary', label: 'Not Started' },
-        'in_progress': { icon: 'fa-spinner', color: 'primary', label: 'Playing' },
-        'completed': { icon: 'fa-check-circle', color: 'success', label: 'Completed' },
-        'abandoned': { icon: 'fa-times-circle', color: 'warning', label: 'Abandoned' },
-        '100_percent': { icon: 'fa-trophy', color: 'warning', label: '100%' }
-    };
-    
-    const status = statuses[game.completion_status || 'not_started'];
-    
-    return `
-        <div class="completion-status mt-1" onclick="showCompletionModal(${game.id}); event.stopPropagation();" 
-             style="cursor: pointer;" title="Click to update completion status">
-            <small class="text-${status.color}">
-                <i class="fas ${status.icon}"></i> ${status.label}
-                ${game.completion_percentage > 0 ? ` (${game.completion_percentage}%)` : ''}
-            </small>
-        </div>
-    `;
-}
+// Completion tracking functions (renderCompletionStatus defined earlier in file)
 
 async function showCompletionModal(gameId) {
     try {
@@ -2246,8 +2297,3 @@ async function filterByCompletionStatus(status) {
         showToast('Failed to filter games', 'error');
     }
 }
-
-// Remove duplicate active session variables and functions
-// (This section was duplicated earlier in the code)
-
-
