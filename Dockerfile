@@ -27,9 +27,10 @@ FROM alpine:latest
 # Install ca-certificates for SSL/TLS and Docker CLI for logs functionality
 RUN apk --no-cache add ca-certificates tzdata docker-cli
 
-# Create app user
+# Create app user and add to docker group for socket access
 RUN addgroup -g 1001 -S pelico && \
-    adduser -u 1001 -S pelico -G pelico
+    adduser -u 1001 -S pelico -G pelico && \
+    addgroup pelico docker
 
 WORKDIR /app
 
@@ -42,8 +43,8 @@ COPY --from=builder /app/web ./web
 # Create data directory for ROM scanning
 RUN mkdir -p /data/roms && chown -R pelico:pelico /data
 
-# Switch to non-root user
-USER pelico
+# Stay as root for Docker socket access
+# USER pelico
 
 # Expose port
 EXPOSE 8080
