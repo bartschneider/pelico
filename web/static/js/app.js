@@ -260,7 +260,7 @@ function updateFilterOptions() {
         platformFilter.innerHTML = '<option value="">All Platforms</option>';
         platforms.forEach(platform => {
             const option = document.createElement('option');
-            option.value = platform.id;
+            option.value = platform.name;  // Use name instead of ID for backend compatibility
             option.textContent = platform.name;
             platformFilter.appendChild(option);
         });
