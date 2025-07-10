@@ -1,9 +1,16 @@
 # Pelico Makefile
 
-# Deployment variables - CONFIGURE THESE VIA ENVIRONMENT VARIABLES
-SERVER_HOST ?= 192.168.1.52
-SERVER_USER ?= bartosz
-SERVER_PASSWORD ?= $(shell echo "$$SERVER_PASSWORD")
+# Load environment variables from .env file
+ifneq (,$(wildcard ./.env))
+    include .env
+    export
+endif
+
+# Deployment variables - CONFIGURE THESE VIA .env FILE
+SERVER_HOST ?= $(strip $(subst ",,$(HOMELAB_IP)))
+SERVER_USER ?= $(strip $(subst ",,$(HOMELAB_USER)))
+SERVER_PASSWORD ?= $(strip $(subst ",,$(HOMELAB_SSH_PASSWORD)))
+DEPLOY_PORT ?= $(strip $(subst ",,$(DEPLOY_TO_PORT)))
 PROJECT_DIR = pelico
 
 .PHONY: help build run test clean docker-build docker-up docker-down deps lint deploy homelab-status homelab-logs
@@ -101,14 +108,32 @@ reset-all: clean docker-down
 
 # Homelab deployment commands
 deploy: docker-build
-	@echo "Deploying to homelab server..."
+	@echo "Deploying to homelab server $(SERVER_HOST)..."
 	@echo "Stopping containers on server..."
 	sshpass -p '$(SERVER_PASSWORD)' ssh $(SERVER_USER)@$(SERVER_HOST) 'cd $(PROJECT_DIR) && docker compose down'
 	@echo "Transferring Docker image..."
 	docker save pelico:latest | sshpass -p '$(SERVER_PASSWORD)' ssh $(SERVER_USER)@$(SERVER_HOST) 'docker load'
 	@echo "Starting containers on server..."
 	sshpass -p '$(SERVER_PASSWORD)' ssh $(SERVER_USER)@$(SERVER_HOST) 'cd $(PROJECT_DIR) && docker compose up -d'
-	@echo "✅ Deployment complete! Application available at: http://$(SERVER_HOST):8081"
+	@echo "Waiting for services to start..."
+	@sleep 10
+	@echo "🔍 Verifying deployment..."
+	@if curl -s "http://$(SERVER_HOST):$(DEPLOY_PORT)/api/v1/health" | grep -q '"status":"healthy"'; then \
+		echo "✅ Health check: PASSED"; \
+	else \
+		echo "❌ Health check: FAILED"; \
+	fi
+	@if curl -s "http://$(SERVER_HOST):$(DEPLOY_PORT)/api/v1/version" | grep -q '"version"'; then \
+		echo "✅ Version endpoint: PASSED"; \
+	else \
+		echo "❌ Version endpoint: FAILED"; \
+	fi
+	@if curl -s "http://$(SERVER_HOST):$(DEPLOY_PORT)/api/v1/docker/logs?lines=1" | grep -q '"container"'; then \
+		echo "✅ Docker logs endpoint: PASSED"; \
+	else \
+		echo "❌ Docker logs endpoint: FAILED"; \
+	fi
+	@echo "✅ Deployment complete! Application available at: http://$(SERVER_HOST):$(DEPLOY_PORT)"
 
 homelab-status:
 	@echo "Checking homelab container status..."

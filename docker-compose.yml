@@ -39,6 +39,8 @@ services:
       - /mnt/roms:/data/roms:ro
       # Mount for cover art storage
       - cover_art:/app/web/static/covers
+      # Mount Docker socket for container logs access
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       - pelico-network
     depends_on:

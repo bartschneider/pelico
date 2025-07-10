@@ -24,8 +24,8 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo \
 # Final stage
 FROM alpine:latest
 
-# Install ca-certificates for SSL/TLS
-RUN apk --no-cache add ca-certificates tzdata
+# Install ca-certificates for SSL/TLS and Docker CLI for logs functionality
+RUN apk --no-cache add ca-certificates tzdata docker-cli
 
 # Create app user
 RUN addgroup -g 1001 -S pelico && \
