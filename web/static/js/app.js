@@ -1992,6 +1992,7 @@ async function deleteSession(sessionId) {
 // Settings and backup functions
 async function loadSettingsView() {
     await loadBackupInfo();
+    await loadVersionInfo();
 }
 
 async function loadBackupInfo() {
@@ -2403,4 +2404,82 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+// Version information functions
+async function loadVersionInfo() {
+    try {
+        const version = await apiCall('/version');
+        const versionDiv = document.getElementById('versionInfo');
+        const changelogDiv = document.getElementById('changelogInfo');
+        
+        // Display version information
+        versionDiv.innerHTML = `
+            <div class="row">
+                <div class="col-md-6">
+                    <dl class="row">
+                        <dt class="col-sm-6">Version</dt>
+                        <dd class="col-sm-6">
+                            <span class="badge bg-primary">v${version.version}</span>
+                        </dd>
+                        <dt class="col-sm-6">Build Time</dt>
+                        <dd class="col-sm-6">
+                            <small class="text-muted">${version.build_time || 'Development'}</small>
+                        </dd>
+                    </dl>
+                </div>
+                <div class="col-md-6">
+                    <dl class="row">
+                        <dt class="col-sm-6">Git Commit</dt>
+                        <dd class="col-sm-6">
+                            <small class="text-muted font-monospace">${version.git_commit || 'Unknown'}</small>
+                        </dd>
+                        <dt class="col-sm-6">Updated</dt>
+                        <dd class="col-sm-6">
+                            <button class="btn btn-sm btn-outline-secondary" onclick="loadVersionInfo()">
+                                <i class="fas fa-sync"></i> Refresh
+                            </button>
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+        `;
+        
+        // Display recent changes
+        const recentChanges = [
+            '✅ Docker container logs display in settings',
+            '✅ Fixed metadata updater for Gameboy Advance games',
+            '✅ Added proper versioning system with build info',
+            '✅ Enhanced platform filter system'
+        ];
+        
+        changelogDiv.innerHTML = `
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-title">Version ${version.version} Changes</h6>
+                    <ul class="list-unstyled mb-0">
+                        ${recentChanges.map(change => `<li class="mb-1"><small>${change}</small></li>`).join('')}
+                    </ul>
+                    <div class="mt-2">
+                        <small class="text-muted">
+                            <i class="fas fa-clock"></i> Last updated: ${new Date(version.timestamp).toLocaleString()}
+                        </small>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+    } catch (error) {
+        console.error('Failed to load version info:', error);
+        document.getElementById('versionInfo').innerHTML = `
+            <div class="alert alert-warning">
+                <small>Failed to load version information</small>
+            </div>
+        `;
+        document.getElementById('changelogInfo').innerHTML = `
+            <div class="alert alert-warning">
+                <small>Failed to load changelog</small>
+            </div>
+        `;
+    }
 }

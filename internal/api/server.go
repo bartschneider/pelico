@@ -6,6 +6,7 @@ import (
 	"pelico/internal/config"
 	"pelico/internal/handlers"
 	"pelico/internal/services"
+	"pelico/internal/version"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
@@ -130,6 +131,9 @@ func (s *Server) setupRoutes() {
 		
 		// Health check
 		api.GET("/health", s.healthCheck)
+		
+		// Version info
+		api.GET("/version", s.getVersion)
 	}
 	
 	// Serve static files for web interface
@@ -213,4 +217,10 @@ func (s *Server) healthCheck(c *gin.Context) {
 		"cache_stats": cacheStats,
 		"timestamp": time.Now().UTC().Format(time.RFC3339),
 	})
+}
+
+// getVersion returns the application version information
+func (s *Server) getVersion(c *gin.Context) {
+	versionInfo := version.GetInfo()
+	c.JSON(200, versionInfo)
 }

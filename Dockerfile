@@ -15,8 +15,11 @@ RUN go mod download
 # Copy source code
 COPY . .
 
-# Build the application
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o pelico ./cmd/server
+# Build the application with version information
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo \
+    -ldflags="-X pelico/internal/version.BuildTime=$(date -u +%Y-%m-%dT%H:%M:%SZ) \
+              -X pelico/internal/version.GitCommit=$(git rev-parse --short HEAD 2>/dev/null || echo 'unknown')" \
+    -o pelico ./cmd/server
 
 # Final stage
 FROM alpine:latest
