@@ -2,6 +2,115 @@
 
 const API_BASE = '/api/v1';
 
+// Modal Management System
+class ModalManager {
+    constructor() {
+        this.activeModals = [];
+    }
+    
+    async openModal(modalId, setupFunc = null) {
+        // Close any currently open modals first
+        await this.closeAll();
+        
+        const modalElement = document.getElementById(modalId);
+        if (!modalElement) {
+            console.error(`Modal ${modalId} not found`);
+            return null;
+        }
+        
+        const modal = new bootstrap.Modal(modalElement);
+        this.activeModals.push({ id: modalId, instance: modal, element: modalElement });
+        
+        // Run setup function if provided
+        if (setupFunc) {
+            try {
+                await setupFunc();
+            } catch (error) {
+                console.error('Modal setup failed:', error);
+            }
+        }
+        
+        modal.show();
+        return modal;
+    }
+    
+    async closeAll() {
+        for (const modalData of this.activeModals) {
+            modalData.instance.hide();
+            await this.waitForClose(modalData.instance);
+        }
+        this.activeModals = [];
+    }
+    
+    waitForClose(modal) {
+        return new Promise(resolve => {
+            const element = modal._element;
+            const handler = () => {
+                element.removeEventListener('hidden.bs.modal', handler);
+                resolve();
+            };
+            element.addEventListener('hidden.bs.modal', handler);
+        });
+    }
+    
+    getCurrentModal() {
+        return this.activeModals.length > 0 ? this.activeModals[this.activeModals.length - 1] : null;
+    }
+}
+
+// Global modal manager instance
+const modalManager = new ModalManager();
+
+// Request Management System
+class RequestManager {
+    constructor() {
+        this.activeRequests = new Map();
+    }
+    
+    async fetch(key, url, options = {}) {
+        // Cancel any existing request with same key
+        this.cancel(key);
+        
+        const controller = new AbortController();
+        this.activeRequests.set(key, controller);
+        
+        try {
+            const response = await fetch(url, {
+                ...options,
+                signal: controller.signal
+            });
+            
+            this.activeRequests.delete(key);
+            return response;
+        } catch (error) {
+            this.activeRequests.delete(key);
+            if (error.name === 'AbortError') {
+                console.log(`Request ${key} was cancelled`);
+                return null;
+            }
+            throw error;
+        }
+    }
+    
+    cancel(key) {
+        const controller = this.activeRequests.get(key);
+        if (controller) {
+            controller.abort();
+            this.activeRequests.delete(key);
+        }
+    }
+    
+    cancelAll() {
+        for (const [key, controller] of this.activeRequests) {
+            controller.abort();
+        }
+        this.activeRequests.clear();
+    }
+}
+
+// Global request manager instance
+const requestManager = new RequestManager();
+
 // Global state
 let currentView = 'collection';
 let currentDisplayView = 'tiled'; // 'tiled' or 'list'
@@ -459,6 +568,49 @@ function switchView(viewType) {
     displayGames(games);
 }
 
+// Collection Format Functions
+function renderCollectionFormats(game) {
+    if (!game.collection_formats || !Array.isArray(game.collection_formats) || game.collection_formats.length === 0) {
+        return '';
+    }
+    
+    const formatIcons = {
+        'physical': { icon: 'fa-box', color: 'success', label: 'Physical' },
+        'digital': { icon: 'fa-download', color: 'info', label: 'Digital' },
+        'rom': { icon: 'fa-hdd', color: 'warning', label: 'ROM' }
+    };
+    
+    return game.collection_formats.map(format => {
+        const config = formatIcons[format];
+        if (!config) return '';
+        
+        return `<span class="badge bg-${config.color} me-1" title="${config.label}">
+            <i class="fas ${config.icon}"></i>
+        </span>`;
+    }).join('');
+}
+
+function renderCollectionFormatsDetailed(game) {
+    if (!game.collection_formats || !Array.isArray(game.collection_formats) || game.collection_formats.length === 0) {
+        return '<span class="text-muted">No format specified</span>';
+    }
+    
+    const formatIcons = {
+        'physical': { icon: 'fa-box', color: 'success', label: 'Physical Copy' },
+        'digital': { icon: 'fa-download', color: 'info', label: 'Digital Purchase' },
+        'rom': { icon: 'fa-hdd', color: 'warning', label: 'ROM File' }
+    };
+    
+    return game.collection_formats.map(format => {
+        const config = formatIcons[format];
+        if (!config) return '';
+        
+        return `<span class="badge bg-${config.color} me-1">
+            <i class="fas ${config.icon} me-1"></i>${config.label}
+        </span>`;
+    }).join('');
+}
+
 // Completion Status Functions
 function renderCompletionStatus(game) {
     const statuses = {
@@ -559,6 +711,7 @@ function displayGamesList(gamesList) {
                 <th>Platform</th>
                 <th>Year</th>
                 <th>Genre</th>
+                <th>Format</th>
                 <th>Rating</th>
                 <th>Completion</th>
                 <th>Files</th>
@@ -616,10 +769,13 @@ function createGameCard(game) {
                 <p class="card-text small text-muted">
                     ${game.year ? game.year : 'Unknown Year'} • ${game.genre || 'Unknown Genre'}
                 </p>
+                <div class="mb-2">
+                    ${renderCollectionFormats(game)}
+                </div>
                 ${game.rating ? `
                     <div class="rating-stars">
                         ${generateStars(game.rating)}
-                        <small class="text-muted">(${game.rating}/10)</small>
+                        <small class="text-muted">(${game.rating.toFixed(1)}/10)</small>
                     </div>
                 ` : ''}
                 ${game.file_locations && game.file_locations.length > 0 ? `
@@ -656,11 +812,12 @@ function createGameListRow(game) {
         <td>${game.platform?.name || 'Unknown'}</td>
         <td>${game.year || '-'}</td>
         <td>${game.genre || '-'}</td>
+        <td>${renderCollectionFormats(game)}</td>
         <td>
             ${game.rating ? `
                 <div class="rating-stars-small">
                     ${ratingStars}
-                    <small class="text-muted">(${game.rating}/10)</small>
+                    <small class="text-muted">(${game.rating.toFixed(1)}/10)</small>
                 </div>
             ` : '-'}
         </td>
@@ -792,7 +949,9 @@ function createCompactGameCard(game) {
     // Get last play session for display
     let lastPlayed = '';
     if (game.play_sessions && game.play_sessions.length > 0) {
-        const lastSession = game.play_sessions[0];
+        // Sort sessions by start_time descending to get the most recent
+        const sortedSessions = [...game.play_sessions].sort((a, b) => new Date(b.start_time) - new Date(a.start_time));
+        const lastSession = sortedSessions[0];
         lastPlayed = new Date(lastSession.start_time).toLocaleDateString();
     }
     
@@ -835,6 +994,7 @@ async function applyAllFilters() {
         const filters = {
             platform: document.getElementById('platformFilter')?.value,
             genre: document.getElementById('genreFilter')?.value,
+            format: document.getElementById('formatFilter')?.value,
             completion: document.querySelector('.completion-filter.active')?.dataset.status,
             sort: document.getElementById('sortBy')?.value || 'title',
             page: currentPage,
@@ -859,6 +1019,9 @@ async function applyAllFilters() {
         }
         if (filters.genre && filters.genre !== '') {
             params.append('genre', filters.genre);
+        }
+        if (filters.format && filters.format !== '') {
+            params.append('collection_format', filters.format);
         }
         if (filters.completion && filters.completion !== 'all') {
             params.append('completion_status', filters.completion);
@@ -911,16 +1074,31 @@ async function loadGamesWithParams(params) {
         isLoading = true;
         showLoadingIndicator();
         
-        const response = await apiCall(`/games?${params.toString()}`);
+        // Use request manager to handle cancellation for filter operations
+        const response = await requestManager.fetch(
+            'filter-games',
+            `${API_BASE}/games?${params.toString()}`,
+            {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' }
+            }
+        );
+        
+        // Handle cancelled request
+        if (response === null) {
+            return; // Request was cancelled
+        }
+        
+        const data = await response.json();
         
         // Validate response structure
-        if (!response || !response.games || !response.pagination) {
+        if (!data || !data.games || !data.pagination) {
             throw new Error('Invalid response structure from server');
         }
         
-        games = response.games;
-        currentPage = response.pagination.page;
-        totalPages = response.pagination.total_pages;
+        games = data.games;
+        currentPage = data.pagination.page;
+        totalPages = data.pagination.total_pages;
         
         extractGenresFromCurrentGames();
         updateFilterOptions(true); // Preserve current filter selections
@@ -1101,7 +1279,7 @@ async function createGameFromMetadata(platformId, metadata) {
         
         // Close modal and reload games
         bootstrap.Modal.getInstance(document.getElementById('addGameModal')).hide();
-        await loadGames();
+        await applyAllFilters();
         
         showToast('Game added successfully with metadata!', 'success');
     } catch (error) {
@@ -1113,12 +1291,25 @@ async function createGameFromMetadata(platformId, metadata) {
 // CRUD operations
 async function addGame() {
     try {
+        // Collect collection formats
+        const collectionFormats = [];
+        if (document.getElementById('gameFormatPhysical').checked) {
+            collectionFormats.push('physical');
+        }
+        if (document.getElementById('gameFormatDigital').checked) {
+            collectionFormats.push('digital');
+        }
+        if (document.getElementById('gameFormatRom').checked) {
+            collectionFormats.push('rom');
+        }
+        
         const gameData = {
             title: document.getElementById('gameTitle').value,
             platform_id: parseInt(document.getElementById('gamePlatform').value),
             year: parseInt(document.getElementById('gameYear').value) || 0,
             genre: document.getElementById('gameGenre').value,
-            description: document.getElementById('gameDescription').value
+            description: document.getElementById('gameDescription').value,
+            collection_formats: collectionFormats
         };
         
         await apiCall('/games', 'POST', gameData);
@@ -1126,7 +1317,7 @@ async function addGame() {
         // Close modal and reload games
         bootstrap.Modal.getInstance(document.getElementById('addGameModal')).hide();
         document.getElementById('addGameForm').reset();
-        await loadGames();
+        await applyAllFilters();
         
         showToast('Game added successfully!', 'success');
     } catch (error) {
@@ -1202,7 +1393,7 @@ async function fetchMetadata(gameId) {
     try {
         showToast('Fetching metadata...', 'info');
         await apiCall(`/games/${gameId}/fetch-metadata`, 'POST');
-        await loadGames();
+        await applyAllFilters();
         showToast('Metadata updated successfully!', 'success');
     } catch (error) {
         console.error('Failed to fetch metadata:', error);
@@ -1303,16 +1494,41 @@ async function searchGames(event) {
     event.preventDefault();
     
     const query = document.getElementById('searchInput').value.trim();
+    
     if (!query) {
-        displayGames(games);
+        // Clear search and reapply current filters
+        await applyAllFilters();
         return;
     }
     
     try {
-        const results = await apiCall('/games/search', 'POST', { title: query });
+        // Build search params including current filters
+        const searchParams = {
+            title: query,
+            platform: document.getElementById('platformFilter')?.value || '',
+            genre: document.getElementById('genreFilter')?.value || '',
+            format: document.getElementById('formatFilter')?.value || '',
+            completion_status: document.querySelector('.completion-filter.active')?.dataset.status || 'all'
+        };
+        
+        // Remove empty values
+        Object.keys(searchParams).forEach(key => {
+            if (!searchParams[key] || searchParams[key] === 'all' || searchParams[key] === '') {
+                delete searchParams[key];
+            }
+        });
+        
+        const results = await apiCall('/games/search', 'POST', searchParams);
         displayGames(results);
+        
+        // Update URL to include search
+        const currentUrl = new URL(window.location);
+        currentUrl.searchParams.set('search', query);
+        window.history.replaceState(null, '', currentUrl.toString());
+        
     } catch (error) {
         console.error('Search failed:', error);
+        showToast('Search failed', 'error');
     }
 }
 
@@ -1338,6 +1554,11 @@ function updatePlatformSelects() {
 
 // Edit game functionality
 async function editGame(gameId) {
+    await loadGameForEdit(gameId);
+    new bootstrap.Modal(document.getElementById('editGameModal')).show();
+}
+
+async function loadGameForEdit(gameId) {
     try {
         const game = await apiCall(`/games/${gameId}`);
         
@@ -1355,14 +1576,33 @@ async function editGame(gameId) {
         if (game.purchase_date) {
             const date = new Date(game.purchase_date);
             document.getElementById('editGamePurchaseDate').value = date.toISOString().split('T')[0];
+        } else {
+            document.getElementById('editGamePurchaseDate').value = '';
         }
         
-        // Update platform options and show modal
+        // Handle collection formats
+        document.getElementById('editGameFormatPhysical').checked = false;
+        document.getElementById('editGameFormatDigital').checked = false;
+        document.getElementById('editGameFormatRom').checked = false;
+        
+        if (game.collection_formats && Array.isArray(game.collection_formats)) {
+            game.collection_formats.forEach(format => {
+                if (format === 'physical') {
+                    document.getElementById('editGameFormatPhysical').checked = true;
+                } else if (format === 'digital') {
+                    document.getElementById('editGameFormatDigital').checked = true;
+                } else if (format === 'rom') {
+                    document.getElementById('editGameFormatRom').checked = true;
+                }
+            });
+        }
+        
+        // Update platform options
         updatePlatformSelects();
-        new bootstrap.Modal(document.getElementById('editGameModal')).show();
     } catch (error) {
         console.error('Failed to load game for editing:', error);
         showToast('Failed to load game details', 'error');
+        throw error;
     }
 }
 
@@ -1385,14 +1625,43 @@ async function updateGame() {
             gameData.purchase_date = new Date(purchaseDate).toISOString();
         }
         
+        // Collect collection formats
+        const collectionFormats = [];
+        if (document.getElementById('editGameFormatPhysical').checked) {
+            collectionFormats.push('physical');
+        }
+        if (document.getElementById('editGameFormatDigital').checked) {
+            collectionFormats.push('digital');
+        }
+        if (document.getElementById('editGameFormatRom').checked) {
+            collectionFormats.push('rom');
+        }
+        gameData.collection_formats = collectionFormats;
+        
         await apiCall(`/games/${gameId}`, 'PUT', gameData);
         
-        // Close modal and reload
-        bootstrap.Modal.getInstance(document.getElementById('editGameModal')).hide();
-        await loadGames();
+        // Check if we came from game details modal by checking if currentDetailGame is set
+        const returnToDetails = currentDetailGame && currentDetailGame.id == gameId;
+        
+        // Close edit modal
+        const editModal = bootstrap.Modal.getInstance(document.getElementById('editGameModal'));
+        editModal.hide();
+        
+        // Reload data preserving filters and pagination
+        await applyAllFilters();
         await loadRecentlyPlayedGames();
         
         showToast('Game updated successfully!', 'success');
+        
+        // If we came from game details modal, wait for edit modal to close then reopen details
+        if (returnToDetails) {
+            const editModalElement = document.getElementById('editGameModal');
+            editModalElement.addEventListener('hidden.bs.modal', function onEditHidden() {
+                editModalElement.removeEventListener('hidden.bs.modal', onEditHidden);
+                // Refresh the game details modal with updated data
+                showGameDetails(gameId);
+            });
+        }
     } catch (error) {
         console.error('Failed to update game:', error);
         showToast('Failed to update game', 'error');
@@ -1401,6 +1670,11 @@ async function updateGame() {
 
 // Play session functionality
 function showPlaySessionModal(gameId, gameTitle) {
+    setupPlaySessionModal(gameId, gameTitle);
+    new bootstrap.Modal(document.getElementById('addSessionModal')).show();
+}
+
+function setupPlaySessionModal(gameId, gameTitle) {
     document.getElementById('sessionGameId').value = gameId;
     document.getElementById('sessionGameTitle').textContent = gameTitle;
     
@@ -1413,8 +1687,6 @@ function showPlaySessionModal(gameId, gameTitle) {
     document.getElementById('sessionEndTime').value = '';
     document.getElementById('sessionRating').value = '';
     document.getElementById('sessionNotes').value = '';
-    
-    new bootstrap.Modal(document.getElementById('addSessionModal')).show();
 }
 
 async function addPlaySession() {
@@ -1633,7 +1905,7 @@ async function showGameDetails(gameId) {
             ratingDiv.innerHTML = `
                 <div class="rating-stars">
                     ${generateStars(game.rating)}
-                    <span class="text-muted">(${game.rating}/10)</span>
+                    <span class="text-muted">(${game.rating.toFixed(1)}/10)</span>
                 </div>
             `;
         } else {
@@ -1662,6 +1934,14 @@ async function showGameDetails(gameId) {
             `;
         } else {
             filesDiv.innerHTML = '<span class="badge bg-secondary">No files</span>';
+        }
+        
+        // Handle collection formats
+        const formatsDiv = document.getElementById('detailFormats');
+        if (game.collection_formats && Array.isArray(game.collection_formats) && game.collection_formats.length > 0) {
+            formatsDiv.innerHTML = renderCollectionFormatsDetailed(game);
+        } else {
+            formatsDiv.innerHTML = '<span class="text-muted">No format specified</span>';
         }
         
         // Load and display play sessions
@@ -1725,10 +2005,12 @@ async function loadGameSessions(gameId) {
     }
 }
 
-function editGameFromDetails() {
+async function editGameFromDetails() {
     if (currentDetailGame) {
-        bootstrap.Modal.getInstance(document.getElementById('gameDetailsModal')).hide();
-        editGame(currentDetailGame.id);
+        // Use modal manager to safely transition between modals
+        await modalManager.openModal('editGameModal', async () => {
+            await loadGameForEdit(currentDetailGame.id);
+        });
     }
 }
 
@@ -1745,10 +2027,12 @@ async function fetchMetadataFromDetails() {
     }
 }
 
-function logSessionFromDetails() {
+async function logSessionFromDetails() {
     if (currentDetailGame) {
-        bootstrap.Modal.getInstance(document.getElementById('gameDetailsModal')).hide();
-        showPlaySessionModal(currentDetailGame.id, currentDetailGame.title);
+        // Use modal manager to safely transition between modals
+        await modalManager.openModal('addSessionModal', async () => {
+            setupPlaySessionModal(currentDetailGame.id, currentDetailGame.title);
+        });
     }
 }
 
@@ -1869,7 +2153,7 @@ async function deleteGame(gameId, gameTitle) {
     
     try {
         await apiCall(`/games/${gameId}`, 'DELETE');
-        await loadGames();
+        await applyAllFilters();
         await loadRecentlyPlayedGames();
         showToast('Game deleted successfully', 'success');
     } catch (error) {
@@ -2241,9 +2525,9 @@ async function updateCompletionStatus() {
         
         await apiCall(`/games/${gameId}/completion`, 'PUT', completionData);
         
-        // Close modal and reload games
+        // Close modal and refresh with current filters preserved
         bootstrap.Modal.getInstance(document.getElementById('completionModal')).hide();
-        await loadGames();
+        await applyAllFilters();
         
         showToast('Completion status updated successfully!', 'success');
     } catch (error) {
@@ -2328,86 +2612,6 @@ async function filterByCompletionStatus(status) {
     }
 }
 
-// Docker logs functionality
-function showDockerLogs() {
-    new bootstrap.Modal(document.getElementById('dockerLogsModal')).show();
-}
-
-async function refreshDockerLogs() {
-    try {
-        const container = document.getElementById('dockerContainer').value;
-        const lines = document.getElementById('dockerLogLines').value;
-        
-        // Show loading
-        const logsContent = document.getElementById('dockerLogsContent');
-        const logsInfo = document.getElementById('dockerLogsInfo');
-        
-        logsContent.innerHTML = '<div class="text-center text-info"><i class="fas fa-spinner fa-spin"></i> Loading logs...</div>';
-        logsInfo.innerHTML = '';
-        
-        // Fetch logs from API
-        const response = await apiCall(`/docker/logs?container=${encodeURIComponent(container)}&lines=${lines}`);
-        
-        // Display logs
-        if (response.logs && response.logs.length > 0) {
-            const logsHtml = response.logs.map(line => {
-                // Basic log line formatting - detect log levels
-                let className = '';
-                if (line.toLowerCase().includes('error')) {
-                    className = 'text-danger';
-                } else if (line.toLowerCase().includes('warn')) {
-                    className = 'text-warning';
-                } else if (line.toLowerCase().includes('info')) {
-                    className = 'text-info';
-                } else if (line.toLowerCase().includes('debug')) {
-                    className = 'text-muted';
-                } else if (line.includes('⚠️') || line.includes('💡') || line.includes('📋')) {
-                    className = 'text-warning';
-                } else if (line.includes('🕐')) {
-                    className = 'text-muted';
-                }
-                
-                return `<div class="${className}">${escapeHtml(line)}</div>`;
-            }).join('');
-            
-            logsContent.innerHTML = logsHtml;
-            
-            // Scroll to bottom
-            logsContent.scrollTop = logsContent.scrollHeight;
-            
-            // Update info with note if present
-            let infoText = `
-                <strong>Container:</strong> ${response.container} | 
-                <strong>Lines:</strong> ${response.lines} | 
-                <strong>Updated:</strong> ${new Date(response.timestamp).toLocaleString()}
-            `;
-            
-            if (response.note) {
-                infoText += ` | <strong>Note:</strong> ${response.note}`;
-            }
-            
-            logsInfo.innerHTML = infoText;
-        } else {
-            logsContent.innerHTML = '<div class="text-center text-muted">No logs available</div>';
-            logsInfo.innerHTML = '';
-        }
-        
-    } catch (error) {
-        console.error('Failed to load Docker logs:', error);
-        document.getElementById('dockerLogsContent').innerHTML = `
-            <div class="text-center text-danger">
-                <i class="fas fa-exclamation-triangle"></i>
-                Failed to load logs: ${error.message}
-            </div>
-        `;
-        document.getElementById('dockerLogsInfo').innerHTML = '';
-    }
-}
-
-function clearDockerLogsDisplay() {
-    document.getElementById('dockerLogsContent').innerHTML = '<div class="text-center text-muted">Click "Refresh Logs" to load container logs</div>';
-    document.getElementById('dockerLogsInfo').innerHTML = '';
-}
 
 // Helper function to escape HTML
 function escapeHtml(text) {
@@ -2457,10 +2661,12 @@ async function loadVersionInfo() {
         
         // Display recent changes
         const recentChanges = [
-            '✅ Docker container logs display in settings',
-            '✅ Fixed metadata updater for Gameboy Advance games',
-            '✅ Added proper versioning system with build info',
-            '✅ Enhanced platform filter system'
+            '✅ Fixed completion status update preserving active filters',
+            '✅ Enhanced search to respect platform/genre/format filters',
+            '✅ Implemented proper modal management (no more stacking bugs)',
+            '✅ Added request cancellation for rapid filter changes',
+            '✅ Fixed rating display precision (now shows 8.6/10 instead of 8.567/10)',
+            '✅ Fixed last played display showing proper recent sessions'
         ];
         
         changelogDiv.innerHTML = `

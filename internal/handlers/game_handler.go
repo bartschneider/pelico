@@ -62,6 +62,7 @@ func (h *GameHandler) GetGames(c *gin.Context) {
 	platformFilter := c.Query("platform")
 	genreFilter := c.Query("genre")
 	completionFilter := c.Query("completion_status")
+	formatFilter := c.Query("collection_format")
 	
 	// Build base query with filters
 	baseQuery := h.db.Model(&models.Game{})
@@ -94,6 +95,11 @@ func (h *GameHandler) GetGames(c *gin.Context) {
 		} else {
 			baseQuery = baseQuery.Where("completion_status = ?", completionFilter)
 		}
+	}
+	
+	// Apply collection format filter
+	if formatFilter != "" && formatFilter != "all" {
+		baseQuery = baseQuery.Where("collection_formats::text LIKE ?", "%\""+formatFilter+"\"%")
 	}
 	
 	// Get total count with filters applied
@@ -241,13 +247,14 @@ func (h *GameHandler) CreateGame(c *gin.Context) {
 	
 	// Create game from validated request
 	game := models.Game{
-		Title:       req.Title,
-		PlatformID:  req.PlatformID,
-		Year:        req.Year,
-		Genre:       req.Genre,
-		Rating:      req.Rating,
-		Description: req.Description,
-		CoverArtURL: req.CoverArtURL,
+		Title:             req.Title,
+		PlatformID:        req.PlatformID,
+		Year:              req.Year,
+		Genre:             req.Genre,
+		Rating:            req.Rating,
+		Description:       req.Description,
+		CoverArtURL:       req.CoverArtURL,
+		CollectionFormats: models.CollectionFormats(req.CollectionFormats),
 	}
 	
 	result := h.db.Create(&game)
@@ -343,6 +350,9 @@ func (h *GameHandler) UpdateGame(c *gin.Context) {
 	if req.CoverArtURL != "" {
 		game.CoverArtURL = req.CoverArtURL
 	}
+	if req.CollectionFormats != nil {
+		game.CollectionFormats = models.CollectionFormats(req.CollectionFormats)
+	}
 	
 	result := h.db.Save(&game)
 	if result.Error != nil {
@@ -398,10 +408,12 @@ func (h *GameHandler) DeleteGame(c *gin.Context) {
 
 func (h *GameHandler) SearchGames(c *gin.Context) {
 	var searchParams struct {
-		Title    string `json:"title"`
-		Platform string `json:"platform"`
-		Genre    string `json:"genre"`
-		Year     int    `json:"year"`
+		Title            string `json:"title"`
+		Platform         string `json:"platform"`
+		Genre            string `json:"genre"`
+		Year             int    `json:"year"`
+		Format           string `json:"format"`
+		CompletionStatus string `json:"completion_status"`
 	}
 	
 	if err := c.ShouldBindJSON(&searchParams); err != nil {
@@ -423,6 +435,16 @@ func (h *GameHandler) SearchGames(c *gin.Context) {
 	if searchParams.Platform != "" {
 		query = query.Joins("JOIN platforms ON games.platform_id = platforms.id").
 			Where("platforms.name ILIKE ?", "%"+searchParams.Platform+"%")
+	}
+	if searchParams.Format != "" && searchParams.Format != "all" {
+		query = query.Where("collection_formats::text LIKE ?", "%\""+searchParams.Format+"\"%")
+	}
+	if searchParams.CompletionStatus != "" && searchParams.CompletionStatus != "all" {
+		if searchParams.CompletionStatus == "backlog" {
+			query = query.Where("completion_status IN ?", []string{"not_started", "in_progress"})
+		} else {
+			query = query.Where("completion_status = ?", searchParams.CompletionStatus)
+		}
 	}
 	
 	var games []models.Game
