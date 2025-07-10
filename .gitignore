@@ -126,6 +126,9 @@ yarn-error.log*
 !docker-compose.example.yml
 !settings.example.json
 
-# Makefile with credentials (if accidentally created)
+# Scripts with credentials (if accidentally created)
+deploy-to-homelab.sh
+deploy-*.sh
+*deploy*.sh
 Makefile.local
 Makefile.secret
