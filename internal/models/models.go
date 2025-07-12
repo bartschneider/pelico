@@ -101,6 +101,20 @@ type PlaySession struct {
 	UpdatedAt time.Time  `json:"updated_at"`
 }
 
+type Wishlist struct {
+	ID        uint      `json:"id" gorm:"primaryKey"`
+	GameID    uint      `json:"game_id"`
+	Game      Game      `json:"game" gorm:"foreignKey:GameID"`
+	AddedAt   time.Time `json:"added_at"`
+}
+
+type Shortlist struct {
+	ID        uint      `json:"id" gorm:"primaryKey"`
+	GameID    uint      `json:"game_id"`
+	Game      Game      `json:"game" gorm:"foreignKey:GameID"`
+	AddedAt   time.Time `json:"added_at"`
+}
+
 func AutoMigrate(db *gorm.DB) error {
-	return db.AutoMigrate(&Platform{}, &Game{}, &FileLocation{}, &PlaySession{})
+	return db.AutoMigrate(&Platform{}, &Game{}, &FileLocation{}, &PlaySession{}, &Wishlist{}, &Shortlist{})
 }

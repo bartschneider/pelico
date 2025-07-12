@@ -1,0 +1,15 @@
+-- Wishlist table
+CREATE TABLE IF NOT EXISTS wishlist (
+  id SERIAL PRIMARY KEY,
+  game_id INTEGER NOT NULL,
+  added_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  FOREIGN KEY (game_id) REFERENCES games(id) ON DELETE CASCADE
+);
+
+-- Shortlist table
+CREATE TABLE IF NOT EXISTS shortlist (
+  id SERIAL PRIMARY KEY,
+  game_id INTEGER NOT NULL,
+  added_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  FOREIGN KEY (game_id) REFERENCES games(id) ON DELETE CASCADE
+);

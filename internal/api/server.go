@@ -66,6 +66,9 @@ func (s *Server) setupRoutes() {
 	scannerHandler := handlers.NewScannerHandler(s.db, s.config.TwitchClientID, s.config.TwitchClientSecret)
 	directoryHandler := handlers.NewDirectoryHandler()
 	backupHandler := handlers.NewBackupHandler(s.db, s.config)
+	wishlistHandler := handlers.NewWishlistHandler(s.db)
+	shortlistHandler := handlers.NewShortlistHandler(s.db)
+	statsHandler := handlers.NewStatsHandler(s.db)
 	
 	// API routes
 	api := s.router.Group("/api/v1")
@@ -113,6 +116,19 @@ func (s *Server) setupRoutes() {
 		api.PUT("/games/:id/completion", gameHandler.UpdateCompletionStatus)
 		api.GET("/games/stats/completion", gameHandler.GetCompletionStats)
 		api.GET("/games/completion/:status", gameHandler.GetGamesByCompletionStatus)
+
+		// Wishlist
+		api.GET("/wishlist", wishlistHandler.GetWishlist)
+		api.POST("/wishlist", wishlistHandler.AddToWishlist)
+		api.DELETE("/wishlist/:id", wishlistHandler.RemoveFromWishlist)
+
+		// Shortlist
+		api.GET("/shortlist", shortlistHandler.GetShortlist)
+		api.POST("/shortlist", shortlistHandler.AddToShortlist)
+		api.DELETE("/shortlist/:id", shortlistHandler.RemoveFromShortlist)
+
+		// Statistics
+		api.GET("/stats", statsHandler.GetStats)
 		
 		// Backup/Restore
 		api.GET("/backup/export", backupHandler.ExportDatabase)
