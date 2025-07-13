@@ -232,7 +232,8 @@ async function apiCall(endpoint, method = 'GET', data = null) {
         const response = await fetch(API_BASE + endpoint, options);
         
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            const errorData = await response.json();
+            throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
         }
         
         return await response.json();
@@ -747,7 +748,7 @@ function createGameCard(game) {
                 <span class="platform-badge">${game.platform?.name || 'Unknown'}</span>
                 ${renderCompletionStatus(game)}
                 <div class="btn-group-actions position-absolute bottom-0 end-0 p-2" onclick="event.stopPropagation();">
-                    <button class="btn btn-sm btn-primary" onclick="editGame(${game.id})" title="Edit Game">
+                    <button class="btn btn-sm btn-primary" onclick="showGameFormModal(${game.id})" title="Edit Game">
                         <i class="fas fa-edit"></i>
                     </button>
                     <button class="btn btn-sm btn-info" onclick="fetchMetadata(${game.id})" title="Update Metadata">
@@ -829,7 +830,7 @@ function createGameListRow(game) {
         </td>
         <td onclick="event.stopPropagation();">
             <div class="btn-group btn-group-sm">
-                <button class="btn btn-outline-primary" onclick="editGame(${game.id})" title="Edit">
+                <button class="btn btn-outline-primary" onclick="showGameFormModal(${game.id})" title="Edit">
                     <i class="fas fa-edit"></i>
                 </button>
                 <button class="btn btn-outline-info" onclick="fetchMetadata(${game.id})" title="Update Metadata">
@@ -1127,203 +1128,90 @@ async function loadGamesWithParams(params) {
     }
 }
 
-// Modal functions
-function showAddGameModal() {
-    updatePlatformSelects();
-    resetAddGameModal();
-    new bootstrap.Modal(document.getElementById('addGameModal')).show();
-}
+// Game Form Modal (Add/Edit)
+async function showGameFormModal(gameId = null) {
+    const modalElement = document.getElementById('gameFormModal');
+    const modal = new bootstrap.Modal(modalElement);
+    const title = document.getElementById('gameFormModalTitle');
+    const submitButton = document.getElementById('gameFormSubmitButton');
+    const form = document.getElementById('gameForm');
+    const errorDiv = document.getElementById('gameFormError');
 
-function resetAddGameModal() {
-    // Reset to search step
-    document.getElementById('gameSearchStep').style.display = 'block';
-    document.getElementById('manualGameStep').style.display = 'none';
-    document.getElementById('addGameBtn').style.display = 'none';
-    
-    // Clear inputs
-    document.getElementById('gameSearchInput').value = '';
-    document.getElementById('searchPlatform').value = '';
-    document.getElementById('gameSearchResults').style.display = 'none';
-    document.getElementById('searchResultsList').innerHTML = '';
-    
-    // Clear manual form
-    if (document.getElementById('addGameForm')) {
-        document.getElementById('addGameForm').reset();
-    }
-}
+    form.reset();
+    document.getElementById('gameId').value = '';
+    errorDiv.style.display = 'none';
+    errorDiv.textContent = '';
 
-function showGameSearchStep() {
-    document.getElementById('gameSearchStep').style.display = 'block';
-    document.getElementById('manualGameStep').style.display = 'none';
-    document.getElementById('addGameBtn').style.display = 'none';
-}
+    await updatePlatformSelects();
 
-function showManualGameForm() {
-    document.getElementById('gameSearchStep').style.display = 'none';
-    document.getElementById('manualGameStep').style.display = 'block';
-    document.getElementById('addGameBtn').style.display = 'block';
-    updatePlatformSelects();
-}
-
-function showAddPlatformModal() {
-    new bootstrap.Modal(document.getElementById('addPlatformModal')).show();
-}
-
-// Search functionality
-let searchTimeout;
-async function searchGamesAsYouType() {
-    const query = document.getElementById('gameSearchInput').value.trim();
-    const platform = document.getElementById('searchPlatform').value;
-    
-    // Clear previous timeout
-    if (searchTimeout) {
-        clearTimeout(searchTimeout);
-    }
-    
-    // Hide results if query is too short
-    if (query.length < 3) {
-        document.getElementById('gameSearchResults').style.display = 'none';
-        return;
-    }
-    
-    // Debounce search
-    searchTimeout = setTimeout(async () => {
+    if (gameId) {
+        // Edit mode
+        title.textContent = 'Edit Game';
+        submitButton.textContent = 'Save Changes';
         try {
-            const results = await apiCall('/games/search-metadata', 'POST', { 
-                title: query, 
-                platform: platform 
-            });
-            
-            displaySearchResults(results.results);
+            const game = await apiCall(`/games/${gameId}`);
+            document.getElementById('gameId').value = game.id;
+            document.getElementById('gameTitle').value = game.title || '';
+            document.getElementById('gamePlatform').value = game.platform_id || '';
+            document.getElementById('gameYear').value = game.year || '';
+            document.getElementById('gameGenre').value = game.genre || '';
+            document.getElementById('gameRating').value = game.rating || '';
+            document.getElementById('gameDescription').value = game.description || '';
+            document.getElementById('gameCoverUrl').value = game.cover_art_url || '';
+            if (game.purchase_date) {
+                document.getElementById('gamePurchaseDate').value = new Date(game.purchase_date).toISOString().split('T')[0];
+            }
+            document.getElementById('gameFormatPhysical').checked = game.collection_formats?.includes('physical');
+            document.getElementById('gameFormatDigital').checked = game.collection_formats?.includes('digital');
+            document.getElementById('gameFormatRom').checked = game.collection_formats?.includes('rom');
         } catch (error) {
-            console.error('Search failed:', error);
+            showToast('Failed to load game data for editing.', 'error');
+            return;
         }
-    }, 500);
-}
-
-function displaySearchResults(results) {
-    const resultsList = document.getElementById('searchResultsList');
-    const resultsContainer = document.getElementById('gameSearchResults');
-    
-    resultsList.innerHTML = '';
-    
-    if (!results || results.length === 0) {
-        resultsList.innerHTML = '<div class="text-muted">No results found. Try different search terms or add manually.</div>';
-        resultsContainer.style.display = 'block';
-        return;
+    } else {
+        // Add mode
+        title.textContent = 'Add New Game';
+        submitButton.textContent = 'Add Game';
     }
-    
-    results.forEach((game, index) => {
-        const resultCard = document.createElement('div');
-        resultCard.className = 'card mb-2 search-result-card';
-        resultCard.style.cursor = 'pointer';
-        
-        resultCard.innerHTML = `
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-2">
-                        ${game.cover_art_url ? 
-                            `<img src="${game.cover_art_url}" class="img-fluid rounded" style="max-height: 80px;">` :
-                            '<div class="bg-secondary rounded d-flex align-items-center justify-content-center" style="height: 80px; width: 60px;"><i class="fas fa-gamepad text-white"></i></div>'
-                        }
-                    </div>
-                    <div class="col-md-10">
-                        <h6 class="card-title mb-1">${game.title}</h6>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <small class="text-muted">
-                                    <strong>Year:</strong> ${game.year || 'Unknown'}<br>
-                                    <strong>Genre:</strong> ${game.genre || 'Unknown'}<br>
-                                    <strong>Rating:</strong> ${game.rating ? game.rating.toFixed(1) + '/10' : 'N/A'}
-                                </small>
-                            </div>
-                            <div class="col-md-6">
-                                <small class="text-muted">
-                                    ${game.description ? game.description.substring(0, 150) + '...' : 'No description available'}
-                                </small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        resultCard.addEventListener('click', () => selectGameFromSearch(game));
-        resultsList.appendChild(resultCard);
-    });
-    
-    resultsContainer.style.display = 'block';
+
+    modal.show();
 }
 
-function selectGameFromSearch(gameMetadata) {
-    const platformSelect = document.getElementById('searchPlatform');
-    const selectedPlatformId = platformSelect.value;
-    
-    if (!selectedPlatformId) {
-        showToast('Please select a platform first', 'warning');
-        return;
-    }
-    
-    // Create game with metadata
-    createGameFromMetadata(parseInt(selectedPlatformId), gameMetadata);
-}
+async function handleGameFormSubmit() {
+    const gameId = document.getElementById('gameId').value;
+    const isEdit = !!gameId;
+    const url = isEdit ? `/games/${gameId}` : '/games';
+    const method = isEdit ? 'PUT' : 'POST';
 
-async function createGameFromMetadata(platformId, metadata) {
+    const collectionFormats = [];
+    if (document.getElementById('gameFormatPhysical').checked) collectionFormats.push('physical');
+    if (document.getElementById('gameFormatDigital').checked) collectionFormats.push('digital');
+    if (document.getElementById('gameFormatRom').checked) collectionFormats.push('rom');
+
+    const gameData = {
+        title: document.getElementById('gameTitle').value,
+        platform_id: parseInt(document.getElementById('gamePlatform').value),
+        year: parseInt(document.getElementById('gameYear').value) || 0,
+        genre: document.getElementById('gameGenre').value,
+        description: document.getElementById('gameDescription').value,
+        cover_art_url: document.getElementById('gameCoverUrl').value,
+        rating: parseFloat(document.getElementById('gameRating').value) || 0,
+        purchase_date: document.getElementById('gamePurchaseDate').value,
+        collection_formats: collectionFormats,
+    };
+
     try {
-        const gameData = {
-            platform_id: platformId,
-            metadata: metadata
-        };
-        
-        await apiCall('/games/from-metadata', 'POST', gameData);
-        
-        // Close modal and reload games
-        bootstrap.Modal.getInstance(document.getElementById('addGameModal')).hide();
-        await applyAllFilters();
-        
-        showToast('Game added successfully with metadata!', 'success');
+        await apiCall(url, method, gameData);
+        bootstrap.Modal.getInstance(document.getElementById('gameFormModal')).hide();
+        showToast(`Game ${isEdit ? 'updated' : 'added'} successfully!`, 'success');
+        await loadGames(currentPage); // Reload current page
     } catch (error) {
-        console.error('Failed to add game from metadata:', error);
-        showToast('Failed to add game: ' + error.message, 'error');
+        const errorDiv = document.getElementById('gameFormError');
+        errorDiv.textContent = `Error: ${error.message}`;
+        errorDiv.style.display = 'block';
     }
 }
 
-// CRUD operations
-async function addGame() {
-    try {
-        // Collect collection formats
-        const collectionFormats = [];
-        if (document.getElementById('gameFormatPhysical').checked) {
-            collectionFormats.push('physical');
-        }
-        if (document.getElementById('gameFormatDigital').checked) {
-            collectionFormats.push('digital');
-        }
-        if (document.getElementById('gameFormatRom').checked) {
-            collectionFormats.push('rom');
-        }
-        
-        const gameData = {
-            title: document.getElementById('gameTitle').value,
-            platform_id: parseInt(document.getElementById('gamePlatform').value),
-            year: parseInt(document.getElementById('gameYear').value) || 0,
-            genre: document.getElementById('gameGenre').value,
-            description: document.getElementById('gameDescription').value,
-            collection_formats: collectionFormats
-        };
-        
-        await apiCall('/games', 'POST', gameData);
-        
-        // Close modal and reload games
-        bootstrap.Modal.getInstance(document.getElementById('addGameModal')).hide();
-        document.getElementById('addGameForm').reset();
-        await applyAllFilters();
-        
-        showToast('Game added successfully!', 'success');
-    } catch (error) {
-        console.error('Failed to add game:', error);
-    }
-}
 
 async function addPlatform() {
     try {
@@ -1540,7 +1428,8 @@ function updatePlatformSelects() {
         const select = document.getElementById(selectId);
         if (select) {
             // Clear existing options except the first one
-            select.innerHTML = select.children[0].outerHTML;
+            const firstOption = select.children[0] ? select.children[0].outerHTML : '<option value="">Select Platform</option>';
+            select.innerHTML = firstOption;
             
             platforms.forEach(platform => {
                 const option = document.createElement('option');
@@ -1550,122 +1439,6 @@ function updatePlatformSelects() {
             });
         }
     });
-}
-
-// Edit game functionality
-async function editGame(gameId) {
-    await loadGameForEdit(gameId);
-    new bootstrap.Modal(document.getElementById('editGameModal')).show();
-}
-
-async function loadGameForEdit(gameId) {
-    try {
-        const game = await apiCall(`/games/${gameId}`);
-        
-        // Populate edit form
-        document.getElementById('editGameId').value = game.id;
-        document.getElementById('editGameTitle').value = game.title || '';
-        document.getElementById('editGamePlatform').value = game.platform_id || '';
-        document.getElementById('editGameYear').value = game.year || '';
-        document.getElementById('editGameGenre').value = game.genre || '';
-        document.getElementById('editGameRating').value = game.rating || '';
-        document.getElementById('editGameDescription').value = game.description || '';
-        document.getElementById('editGameCoverUrl').value = game.cover_art_url || '';
-        
-        // Handle purchase date
-        if (game.purchase_date) {
-            const date = new Date(game.purchase_date);
-            document.getElementById('editGamePurchaseDate').value = date.toISOString().split('T')[0];
-        } else {
-            document.getElementById('editGamePurchaseDate').value = '';
-        }
-        
-        // Handle collection formats
-        document.getElementById('editGameFormatPhysical').checked = false;
-        document.getElementById('editGameFormatDigital').checked = false;
-        document.getElementById('editGameFormatRom').checked = false;
-        
-        if (game.collection_formats && Array.isArray(game.collection_formats)) {
-            game.collection_formats.forEach(format => {
-                if (format === 'physical') {
-                    document.getElementById('editGameFormatPhysical').checked = true;
-                } else if (format === 'digital') {
-                    document.getElementById('editGameFormatDigital').checked = true;
-                } else if (format === 'rom') {
-                    document.getElementById('editGameFormatRom').checked = true;
-                }
-            });
-        }
-        
-        // Update platform options
-        updatePlatformSelects();
-    } catch (error) {
-        console.error('Failed to load game for editing:', error);
-        showToast('Failed to load game details', 'error');
-        throw error;
-    }
-}
-
-async function updateGame() {
-    try {
-        const gameId = document.getElementById('editGameId').value;
-        const gameData = {
-            title: document.getElementById('editGameTitle').value,
-            platform_id: parseInt(document.getElementById('editGamePlatform').value),
-            year: parseInt(document.getElementById('editGameYear').value) || 0,
-            genre: document.getElementById('editGameGenre').value,
-            rating: parseFloat(document.getElementById('editGameRating').value) || 0,
-            description: document.getElementById('editGameDescription').value,
-            cover_art_url: document.getElementById('editGameCoverUrl').value,
-        };
-        
-        // Handle purchase date
-        const purchaseDate = document.getElementById('editGamePurchaseDate').value;
-        if (purchaseDate) {
-            gameData.purchase_date = new Date(purchaseDate).toISOString();
-        }
-        
-        // Collect collection formats
-        const collectionFormats = [];
-        if (document.getElementById('editGameFormatPhysical').checked) {
-            collectionFormats.push('physical');
-        }
-        if (document.getElementById('editGameFormatDigital').checked) {
-            collectionFormats.push('digital');
-        }
-        if (document.getElementById('editGameFormatRom').checked) {
-            collectionFormats.push('rom');
-        }
-        gameData.collection_formats = collectionFormats;
-        
-        await apiCall(`/games/${gameId}`, 'PUT', gameData);
-        
-        // Check if we came from game details modal by checking if currentDetailGame is set
-        const returnToDetails = currentDetailGame && currentDetailGame.id == gameId;
-        
-        // Close edit modal
-        const editModal = bootstrap.Modal.getInstance(document.getElementById('editGameModal'));
-        editModal.hide();
-        
-        // Reload data preserving filters and pagination
-        await applyAllFilters();
-        await loadRecentlyPlayedGames();
-        
-        showToast('Game updated successfully!', 'success');
-        
-        // If we came from game details modal, wait for edit modal to close then reopen details
-        if (returnToDetails) {
-            const editModalElement = document.getElementById('editGameModal');
-            editModalElement.addEventListener('hidden.bs.modal', function onEditHidden() {
-                editModalElement.removeEventListener('hidden.bs.modal', onEditHidden);
-                // Refresh the game details modal with updated data
-                showGameDetails(gameId);
-            });
-        }
-    } catch (error) {
-        console.error('Failed to update game:', error);
-        showToast('Failed to update game', 'error');
-    }
 }
 
 // Play session functionality
@@ -1759,34 +1532,18 @@ function loadPlatformsView() {
 }
 
 function showToast(message, type = 'info') {
-    // Create toast container if it doesn't exist
-    let container = document.querySelector('.toast-container');
-    if (!container) {
-        container = document.createElement('div');
-        container.className = 'toast-container';
-        document.body.appendChild(container);
-    }
+    const toastEl = document.getElementById('toast');
+    const toastTitle = document.getElementById('toastTitle');
+    const toastBody = document.getElementById('toastBody');
+
+    toastTitle.textContent = type.charAt(0).toUpperCase() + type.slice(1);
+    toastBody.textContent = message;
+
+    toastEl.className = 'toast hide'; // Reset classes
+    toastEl.classList.add(`bg-${type === 'error' ? 'danger' : type}`, 'text-white');
     
-    const toast = document.createElement('div');
-    toast.className = `toast align-items-center text-white bg-${type === 'error' ? 'danger' : type} border-0`;
-    toast.setAttribute('role', 'alert');
-    
-    toast.innerHTML = `
-        <div class="d-flex">
-            <div class="toast-body">${message}</div>
-            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-        </div>
-    `;
-    
-    container.appendChild(toast);
-    
-    const bsToast = new bootstrap.Toast(toast, { delay: 3000 });
-    bsToast.show();
-    
-    // Remove toast element after it's hidden
-    toast.addEventListener('hidden.bs.toast', () => {
-        toast.remove();
-    });
+    const toast = new bootstrap.Toast(toastEl);
+    toast.show();
 }
 
 // Directory browser functionality

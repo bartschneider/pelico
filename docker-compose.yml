@@ -23,22 +23,17 @@ services:
       timeout: 5s
       retries: 5
 
-  # Pelico Application
+  # Pelico Backend
   pelico:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: pelico-app
     env_file:
       - .env
     environment:
       - PORT=8080
       - DATABASE_URL=postgres://pelico:pelico@postgres:5432/pelico?sslmode=disable
-    ports:
-      - "8081:8080"
-    volumes:
-      # Mount ROM collection from host-mounted network share
-      - /mnt/roms:/data/roms:ro
-      # Mount for cover art storage
-      - cover_art:/app/web/static/covers
     networks:
       - pelico-network
     depends_on:
@@ -46,15 +41,27 @@ services:
         condition: service_healthy
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/"]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/api/v1/health"]
       interval: 30s
       timeout: 10s
       retries: 3
 
+  # Pelico Frontend
+  frontend:
+    build:
+      context: ./web_new
+      dockerfile: Dockerfile
+    container_name: pelico-frontend
+    ports:
+      - "8081:3000"
+    networks:
+      - pelico-network
+    depends_on:
+      - pelico
+    restart: unless-stopped
+
 volumes:
   postgres_data:
-    driver: local
-  cover_art:
     driver: local
 
 networks:

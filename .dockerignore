@@ -13,7 +13,6 @@ bin/
 coverage.html
 
 # Dependency directories
-vendor/
 
 # IDE files
 .vscode/
@@ -40,7 +39,6 @@ Dockerfile*
 docker-compose*.yml
 
 # Git
-.git/
 .gitignore
 
 # Documentation

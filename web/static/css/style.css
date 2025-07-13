@@ -112,6 +112,15 @@
     opacity: 1;
 }
 
+.modal-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.modal-title {
+    font-weight: 500;
+}
+
 .modal-body .form-control:focus {
     border-color: #667eea;
     box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
@@ -158,11 +167,12 @@
 }
 
 /* Toast notifications */
-.toast-container {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    z-index: 1055;
+.toast {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.toast-header {
+    background-color: rgba(255, 255, 255, 0.85);
 }
 
 /* Improved cards */
@@ -225,4 +235,10 @@
     border-radius: 50%;
     animation: spin 1s linear infinite;
     margin-left: 10px;
+}
+
+/* Inline form error messages */
+#gameFormError {
+    font-size: 0.875em;
+    margin-top: 0.25rem;
 }

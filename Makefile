@@ -72,20 +72,24 @@ lint:
 
 # Docker commands
 docker-build:
-	@echo "Building Docker image..."
-	docker build -t pelico:latest .
+	@echo "Tidying Go modules..."
+	go mod tidy
+	@echo "Vendoring Go dependencies..."
+	go mod vendor
+	@echo "Building Docker images..."
+	docker compose build
 
 docker-up:
 	@echo "Starting Docker Compose services..."
-	docker-compose up -d
+	docker compose up -d
 
 docker-down:
 	@echo "Stopping Docker Compose services..."
-	docker-compose down
+	docker compose down
 
 docker-logs:
 	@echo "Following Docker logs..."
-	docker-compose logs -f
+	docker compose logs -f
 
 # Development setup
 dev-setup:
@@ -96,9 +100,9 @@ dev-setup:
 # Database operations
 db-reset:
 	@echo "Resetting database..."
-	docker-compose down postgres
+	docker compose down postgres
 	docker volume rm pelico_postgres_data
-	docker-compose up -d postgres
+	docker compose up -d postgres
 
 # Full reset (nuclear option)
 reset-all: clean docker-down
@@ -111,22 +115,23 @@ deploy: docker-build
 	@echo "Deploying to homelab server $(SERVER_HOST)..."
 	@echo "Stopping containers on server..."
 	sshpass -p '$(SERVER_PASSWORD)' ssh $(SERVER_USER)@$(SERVER_HOST) 'cd $(PROJECT_DIR) && docker compose down'
-	@echo "Transferring Docker image..."
-	docker save pelico:latest | sshpass -p '$(SERVER_PASSWORD)' ssh $(SERVER_USER)@$(SERVER_HOST) 'docker load'
+	@echo "Transferring Docker images..."
+	docker save pelico-app:latest | sshpass -p '$(SERVER_PASSWORD)' ssh $(SERVER_USER)@$(SERVER_HOST) 'docker load'
+	docker save pelico-frontend:latest | sshpass -p '$(SERVER_PASSWORD)' ssh $(SERVER_USER)@$(SERVER_HOST) 'docker load'
 	@echo "Starting containers on server..."
 	sshpass -p '$(SERVER_PASSWORD)' ssh $(SERVER_USER)@$(SERVER_HOST) 'cd $(PROJECT_DIR) && docker compose up -d'
 	@echo "Waiting for services to start..."
 	@sleep 10
 	@echo "🔍 Verifying deployment..."
-	@if curl -s "http://$(SERVER_HOST):$(DEPLOY_PORT)/api/v1/health" | grep -q '"status":"healthy"'; then \
-		echo "✅ Health check: PASSED"; \
+	@if curl -s "http://$(SERVER_HOST):$(DEPLOY_PORT)" | grep -q "Pelico"; then \
+		echo "✅ Frontend health check: PASSED"; \
 	else \
-		echo "❌ Health check: FAILED"; \
+		echo "❌ Frontend health check: FAILED"; \
 	fi
-	@if curl -s "http://$(SERVER_HOST):$(DEPLOY_PORT)/api/v1/version" | grep -q '"version"'; then \
-		echo "✅ Version endpoint: PASSED"; \
+	@if curl -s "http://$(SERVER_HOST):8081/api/v1/health" | grep -q '"status":"healthy"'; then \
+		echo "✅ Backend health check: PASSED"; \
 	else \
-		echo "❌ Version endpoint: FAILED"; \
+		echo "❌ Backend health check: FAILED"; \
 	fi
 	@echo "✅ Deployment complete! Application available at: http://$(SERVER_HOST):$(DEPLOY_PORT)"
 
@@ -136,4 +141,4 @@ homelab-status:
 
 homelab-logs:
 	@echo "Following homelab application logs..."
-	sshpass -p '$(SERVER_PASSWORD)' ssh $(SERVER_USER)@$(SERVER_HOST) 'cd $(PROJECT_DIR) && docker compose logs -f pelico'
+	sshpass -p '$(SERVER_PASSWORD)' ssh $(SERVER_USER)@$(SERVER_HOST) 'cd $(PROJECT_DIR) && docker compose logs -f pelico-app'

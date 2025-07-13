@@ -479,168 +479,81 @@
         </div>
     </div>
 
-    <!-- Add Game Modal -->
-    <div class="modal fade" id="addGameModal" tabindex="-1">
+    <!-- Game Form Modal (for Add/Edit) -->
+    <div class="modal fade" id="gameFormModal" tabindex="-1">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Add New Game</h5>
+                    <h5 class="modal-title" id="gameFormModalTitle">Game</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <!-- Step 1: Search for game -->
-                    <div id="gameSearchStep">
-                        <h6>Search for Game</h6>
+                    <form id="gameForm">
+                        <input type="hidden" id="gameId">
+                        <div class="alert alert-danger" id="gameFormError" style="display: none;"></div>
                         <div class="mb-3">
-                            <label for="gameSearchInput" class="form-label">Game Title</label>
-                            <input type="text" class="form-control" id="gameSearchInput" 
-                                   placeholder="Start typing to search..." oninput="searchGamesAsYouType()">
-                            <div class="form-text">Search online databases for accurate game information</div>
+                            <label for="gameTitle" class="form-label">Title</label>
+                            <input type="text" class="form-control" id="gameTitle" required>
                         </div>
                         <div class="mb-3">
-                            <label for="searchPlatform" class="form-label">Platform</label>
-                            <select class="form-select" id="searchPlatform">
-                                <option value="">Any Platform</option>
-                            </select>
-                        </div>
-                        <div id="gameSearchResults" class="mt-3" style="display: none;">
-                            <h6>Search Results:</h6>
-                            <div id="searchResultsList"></div>
-                        </div>
-                        <div class="mt-3">
-                            <button type="button" class="btn btn-outline-secondary" onclick="showManualGameForm()">
-                                <i class="fas fa-edit"></i> Add Manually Instead
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Step 2: Manual game form (fallback) -->
-                    <div id="manualGameStep" style="display: none;">
-                        <h6>Manual Game Entry</h6>
-                        <form id="addGameForm">
-                            <div class="mb-3">
-                                <label for="gameTitle" class="form-label">Title</label>
-                                <input type="text" class="form-control" id="gameTitle" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="gamePlatform" class="form-label">Platform</label>
-                                <select class="form-select" id="gamePlatform" required>
-                                    <option value="">Select Platform</option>
-                                </select>
-                            </div>
-                            <div class="mb-3">
-                                <label for="gameYear" class="form-label">Year</label>
-                                <input type="number" class="form-control" id="gameYear">
-                            </div>
-                            <div class="mb-3">
-                                <label for="gameGenre" class="form-label">Genre</label>
-                                <input type="text" class="form-control" id="gameGenre">
-                            </div>
-                            <div class="mb-3">
-                                <label for="gameDescription" class="form-label">Description</label>
-                                <textarea class="form-control" id="gameDescription" rows="3"></textarea>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Collection Format(s)</label>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="gameFormatPhysical" value="physical">
-                                    <label class="form-check-label" for="gameFormatPhysical">
-                                        <i class="fas fa-box me-1"></i>Physical Copy
-                                    </label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="gameFormatDigital" value="digital">
-                                    <label class="form-check-label" for="gameFormatDigital">
-                                        <i class="fas fa-download me-1"></i>Digital Purchase
-                                    </label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="gameFormatRom" value="rom">
-                                    <label class="form-check-label" for="gameFormatRom">
-                                        <i class="fas fa-hdd me-1"></i>ROM File
-                                    </label>
-                                </div>
-                            </div>
-                        </form>
-                        <div class="mt-3">
-                            <button type="button" class="btn btn-outline-secondary" onclick="showGameSearchStep()">
-                                <i class="fas fa-search"></i> Back to Search
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="addGameBtn" onclick="addGame()" style="display: none;">
-                        Add Game
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Edit Game Modal -->
-    <div class="modal fade" id="editGameModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Edit Game</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="editGameForm">
-                        <input type="hidden" id="editGameId">
-                        <div class="mb-3">
-                            <label for="editGameTitle" class="form-label">Title</label>
-                            <input type="text" class="form-control" id="editGameTitle" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="editGamePlatform" class="form-label">Platform</label>
-                            <select class="form-select" id="editGamePlatform" required>
+                            <label for="gamePlatform" class="form-label">Platform</label>
+                            <select class="form-select" id="gamePlatform" required>
                                 <option value="">Select Platform</option>
                             </select>
                         </div>
-                        <div class="mb-3">
-                            <label for="editGameYear" class="form-label">Year</label>
-                            <input type="number" class="form-control" id="editGameYear">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="gameYear" class="form-label">Year</label>
+                                    <input type="number" class="form-control" id="gameYear">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="gameGenre" class="form-label">Genre</label>
+                                    <input type="text" class="form-control" id="gameGenre">
+                                </div>
+                            </div>
                         </div>
                         <div class="mb-3">
-                            <label for="editGameGenre" class="form-label">Genre</label>
-                            <input type="text" class="form-control" id="editGameGenre">
+                            <label for="gameDescription" class="form-label">Description</label>
+                            <textarea class="form-control" id="gameDescription" rows="3"></textarea>
                         </div>
                         <div class="mb-3">
-                            <label for="editGameRating" class="form-label">Rating (0-10)</label>
-                            <input type="number" class="form-control" id="editGameRating" min="0" max="10" step="0.1">
+                            <label for="gameCoverUrl" class="form-label">Cover Art URL</label>
+                            <input type="url" class="form-control" id="gameCoverUrl">
                         </div>
-                        <div class="mb-3">
-                            <label for="editGameDescription" class="form-label">Description</label>
-                            <textarea class="form-control" id="editGameDescription" rows="3"></textarea>
-                        </div>
-                        <div class="mb-3">
-                            <label for="editGameCoverUrl" class="form-label">Cover Art URL</label>
-                            <input type="url" class="form-control" id="editGameCoverUrl">
-                        </div>
-                        <div class="mb-3">
-                            <label for="editGamePurchaseDate" class="form-label">Purchase Date</label>
-                            <input type="date" class="form-control" id="editGamePurchaseDate">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="gameRating" class="form-label">Rating (0-10)</label>
+                                    <input type="number" class="form-control" id="gameRating" min="0" max="10" step="0.1">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="gamePurchaseDate" class="form-label">Purchase Date</label>
+                                    <input type="date" class="form-control" id="gamePurchaseDate">
+                                </div>
+                            </div>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Collection Format(s)</label>
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="editGameFormatPhysical" value="physical">
-                                <label class="form-check-label" for="editGameFormatPhysical">
+                                <input class="form-check-input" type="checkbox" id="gameFormatPhysical" value="physical">
+                                <label class="form-check-label" for="gameFormatPhysical">
                                     <i class="fas fa-box me-1"></i>Physical Copy
                                 </label>
                             </div>
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="editGameFormatDigital" value="digital">
-                                <label class="form-check-label" for="editGameFormatDigital">
+                                <input class="form-check-input" type="checkbox" id="gameFormatDigital" value="digital">
+                                <label class="form-check-label" for="gameFormatDigital">
                                     <i class="fas fa-download me-1"></i>Digital Purchase
                                 </label>
                             </div>
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="editGameFormatRom" value="rom">
-                                <label class="form-check-label" for="editGameFormatRom">
+                                <input class="form-check-input" type="checkbox" id="gameFormatRom" value="rom">
+                                <label class="form-check-label" for="gameFormatRom">
                                     <i class="fas fa-hdd me-1"></i>ROM File
                                 </label>
                             </div>
@@ -649,8 +562,20 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" onclick="updateGame()">Update Game</button>
+                    <button type="button" class="btn btn-primary" id="gameFormSubmitButton" onclick="handleGameFormSubmit()">Submit</button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+        <div id="toast" class="toast hide" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <strong class="me-auto" id="toastTitle"></strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body" id="toastBody">
             </div>
         </div>
     </div>

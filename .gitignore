@@ -137,3 +137,4 @@ Makefile.secret
 ARCHITECTURE_AUDIT*
 claude-env.sh
 pelico-enhanced*
+web_new/.svelte-kit/
