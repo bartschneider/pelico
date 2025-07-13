@@ -22,6 +22,9 @@
     "imports": [
       "_ssr.js",
       "_ssr2.js"
+    ],
+    "dynamicImports": [
+      "src/hooks.server.ts"
     ]
   },
   "_ssr.js": {
@@ -61,6 +64,12 @@
       "_exports.js",
       "_ssr.js"
     ]
+  },
+  "src/hooks.server.ts": {
+    "file": "chunks/hooks.server.js",
+    "name": "hooks.server",
+    "src": "src/hooks.server.ts",
+    "isDynamicEntry": true
   },
   "src/routes/+layout.svelte": {
     "file": "entries/pages/_layout.svelte.js",
@@ -106,6 +115,9 @@
     "isEntry": true,
     "imports": [
       "_ssr.js"
+    ],
+    "css": [
+      "_app/immutable/assets/_page.BA8oacvy.css"
     ]
   },
   "src/routes/wishlist/+page.svelte": {
@@ -115,9 +127,6 @@
     "isEntry": true,
     "imports": [
       "_ssr.js"
-    ],
-    "css": [
-      "_app/immutable/assets/GameCard.CzVZt-fu.css"
     ]
   }
 }
