@@ -30,6 +30,10 @@
     imageError = true;
   }
 
+  function viewGame() {
+    dispatch('view', game);
+  }
+
   function getCompletionStatusColor(status: string) {
     switch (status) {
       case 'completed': return 'text-success';
@@ -60,13 +64,13 @@
   </div>
 {:else}
   <div class="card game-card" role="button" tabindex="0" 
-       on:click={() => dispatch('view', game.id)}
-       on:keydown={(e) => e.key === 'Enter' && dispatch('view', game.id)}>
+       on:click={viewGame}
+       on:keydown={(e) => e.key === 'Enter' && viewGame()}>
     <div class="position-relative">
       <div class="game-cover">
-        {#if game.cover_image_url && !imageError}
+        {#if game.cover_art_url && !imageError}
           <img 
-            src={game.cover_image_url} 
+            src={game.cover_art_url} 
             alt={game.title}
             on:error={handleImageError}
             loading="lazy"

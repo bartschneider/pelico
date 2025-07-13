@@ -16,15 +16,19 @@
     "file": "chunks/exports.js",
     "name": "exports"
   },
+  "_index.js": {
+    "file": "chunks/index.js",
+    "name": "index",
+    "imports": [
+      "_ssr.js"
+    ]
+  },
   "_internal.js": {
     "file": "chunks/internal.js",
     "name": "internal",
     "imports": [
       "_ssr.js",
       "_ssr2.js"
-    ],
-    "dynamicImports": [
-      "src/hooks.server.ts"
     ]
   },
   "_ssr.js": {
@@ -62,14 +66,8 @@
     "imports": [
       "_internal.js",
       "_exports.js",
-      "_ssr.js"
+      "_index.js"
     ]
-  },
-  "src/hooks.server.ts": {
-    "file": "chunks/hooks.server.js",
-    "name": "hooks.server",
-    "src": "src/hooks.server.ts",
-    "isDynamicEntry": true
   },
   "src/routes/+layout.svelte": {
     "file": "entries/pages/_layout.svelte.js",
@@ -78,10 +76,11 @@
     "isEntry": true,
     "imports": [
       "_ssr.js",
-      "_stores.js"
+      "_stores.js",
+      "_index.js"
     ],
     "css": [
-      "_app/immutable/assets/_layout.jDWxQNKJ.css"
+      "_app/immutable/assets/_layout.oUMtFIf8.css"
     ]
   },
   "src/routes/+page.svelte": {
@@ -107,6 +106,46 @@
     ],
     "css": [
       "_app/immutable/assets/GameCard.CzVZt-fu.css"
+    ]
+  },
+  "src/routes/platforms/+page.svelte": {
+    "file": "entries/pages/platforms/_page.svelte.js",
+    "name": "entries/pages/platforms/_page.svelte",
+    "src": "src/routes/platforms/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_ssr.js"
+    ]
+  },
+  "src/routes/scanner/+page.svelte": {
+    "file": "entries/pages/scanner/_page.svelte.js",
+    "name": "entries/pages/scanner/_page.svelte",
+    "src": "src/routes/scanner/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_ssr.js",
+      "_index.js"
+    ],
+    "css": [
+      "_app/immutable/assets/_page.Cu78ERHC.css"
+    ]
+  },
+  "src/routes/sessions/+page.svelte": {
+    "file": "entries/pages/sessions/_page.svelte.js",
+    "name": "entries/pages/sessions/_page.svelte",
+    "src": "src/routes/sessions/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_ssr.js"
+    ]
+  },
+  "src/routes/settings/+page.svelte": {
+    "file": "entries/pages/settings/_page.svelte.js",
+    "name": "entries/pages/settings/_page.svelte",
+    "src": "src/routes/settings/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_ssr.js"
     ]
   },
   "src/routes/shortlist/+page.svelte": {

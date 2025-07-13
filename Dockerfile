@@ -1,5 +1,22 @@
-# Use a specific version of the Go image for reproducibility
-FROM golang:1.24-alpine AS builder
+# Frontend Build Stage
+FROM node:20-alpine AS frontend-builder
+
+WORKDIR /app
+
+# Copy frontend package files
+COPY web_new/package.json web_new/package-lock.json* ./
+
+# Install dependencies
+RUN npm install
+
+# Copy frontend source
+COPY web_new/ ./
+
+# Build the SvelteKit frontend as static files
+RUN npm run build
+
+# Backend Build Stage
+FROM golang:1.24-alpine AS backend-builder
 
 # Set the working directory inside the container
 WORKDIR /app
@@ -13,15 +30,13 @@ RUN go mod download
 # Copy the rest of the application source code
 COPY . .
 
-# Build the Go application using the full package path.
-# This can resolve module path issues in certain edge cases.
+# Build the Go application
 RUN GO111MODULE=on CGO_ENABLED=0 GOOS=linux go build \
     -o /app/pelico \
     -ldflags="-X pelico/internal/version.BuildTime=$(date -u +%Y-%m-%dT%H:%M:%SZ) -X pelico/internal/version.GitCommit=$(git rev-parse --short HEAD 2>/dev/null || echo 'unknown')" \
     pelico/cmd/server
 
 # --- Final Stage ---
-# Use a minimal base image for the final container
 FROM alpine:latest
 
 # Install necessary certificates and timezone data
@@ -34,11 +49,11 @@ RUN addgroup -g 1001 -S pelico && \
 # Set the working directory
 WORKDIR /app
 
-# Copy the compiled binary from the builder stage
-COPY --from=builder /app/pelico .
+# Copy the compiled binary from the backend builder stage
+COPY --from=backend-builder /app/pelico .
 
-# Copy the web assets required by the backend
-COPY --from=builder /app/web ./web
+# Copy the built SvelteKit frontend
+COPY --from=frontend-builder /app/build ./web
 
 # Create and set permissions for the data directory
 RUN mkdir -p /data/roms && chown -R pelico:pelico /data

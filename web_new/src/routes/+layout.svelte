@@ -1,13 +1,14 @@
 <script>
-	import 'bootstrap/dist/css/bootstrap.min.css';
+	import '../app.css';
 	import Nav from '$lib/components/Nav.svelte';
-
-	import 'bootstrap';
+	import ToastNotification from '$lib/components/ui/ToastNotification.svelte';
 </script>
 
 <Nav />
 
-<main class="container mt-4">
+<main class="container-fluid py-4">
 	<slot />
 </main>
+
+<ToastNotification />
 

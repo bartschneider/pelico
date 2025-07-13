@@ -3,6 +3,7 @@ package api
 import (
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 	"pelico/internal/config"
 	"pelico/internal/handlers"
@@ -151,15 +152,18 @@ func (s *Server) setupRoutes() {
 		api.GET("/version", s.getVersion)
 	}
 	
-	// Serve static files for web interface
-	s.router.Static("/static", "./web/static")
-	s.router.LoadHTMLGlob("web/templates/*")
+	// Serve SvelteKit static assets
+	s.router.Static("/_app", "./web/_app")
+	s.router.StaticFile("/favicon.png", "./web/favicon.png")
 	
-	// Web interface routes
-	s.router.GET("/", func(c *gin.Context) {
-		c.HTML(200, "index.html", gin.H{
-			"title": "Pelico - Game Collection Manager",
-		})
+	// SPA fallback - serve index.html for all non-API routes
+	s.router.NoRoute(func(c *gin.Context) {
+		// Only serve SPA for non-API requests
+		if !strings.HasPrefix(c.Request.URL.Path, "/api/") {
+			c.File("./web/index.html")
+		} else {
+			c.JSON(404, gin.H{"error": "API endpoint not found"})
+		}
 	})
 }
 

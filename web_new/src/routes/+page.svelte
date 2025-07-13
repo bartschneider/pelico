@@ -1,9 +1,10 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import type { Game } from '$lib/models';
+  import type { Game, Platform } from '$lib/models';
   import { api, ApiError } from '$lib/api';
   import GameCard from '$lib/components/GameCard.svelte';
   import GameFormModal from '$lib/components/GameFormModal.svelte';
+  import GameDetailModal from '$lib/components/GameDetailModal.svelte';
 
   interface Stats {
     total_games: number;
@@ -30,6 +31,7 @@
   let loading = true;
   let error: string | null = null;
   let showModal = false;
+  let showDetailModal = false;
   let selectedGame: Game | null = null;
 
   onMount(async () => {
@@ -71,7 +73,8 @@
 
   function openEditGameModal(event: CustomEvent<Game>) {
     selectedGame = event.detail;
-    showModal = true;
+    showDetailModal = false;  // Close detail modal first
+    showModal = true;         // Open edit modal
   }
 
   async function handleDeleteGame(event: CustomEvent<number>) {
@@ -138,10 +141,9 @@
     }
   }
 
-  function handleViewGame(event: CustomEvent<number>) {
-    const gameId = event.detail;
-    // TODO: Navigate to game detail view
-    console.log('View game:', gameId);
+  function handleViewGame(event: CustomEvent<Game>) {
+    selectedGame = event.detail;
+    showDetailModal = true;
   }
 
   function getCompletionPercentage(completed: number, total: number): number {
@@ -411,12 +413,22 @@
   {/if}
 </div>
 
-{#if showModal}
-  <GameFormModal 
+<GameFormModal 
+  game={selectedGame} 
+  {platforms}
+  show={showModal}
+  on:submit={handleFormSubmit} 
+  on:close={() => showModal = false} 
+/>
+
+{#if showDetailModal && selectedGame}
+  <GameDetailModal 
     game={selectedGame} 
-    {platforms}
-    on:submit={handleFormSubmit} 
-    on:close={() => showModal = false} 
+    show={showDetailModal}
+    on:close={() => showDetailModal = false}
+    on:edit={openEditGameModal}
+    on:delete={handleDeleteGame}
+    on:log={handleLogSession}
   />
 {/if}
 

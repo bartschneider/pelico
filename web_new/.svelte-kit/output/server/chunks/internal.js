@@ -1,4 +1,4 @@
-import { c as create_ssr_component, a as setContext, v as validate_component, m as missing_component } from "./ssr.js";
+import { c as create_ssr_component, s as setContext, v as validate_component, m as missing_component } from "./ssr.js";
 import { a as afterUpdate } from "./ssr2.js";
 let base = "";
 let assets = base;
@@ -117,7 +117,7 @@ const options = {
   root: Root,
   service_worker: false,
   templates: {
-    app: ({ head, body, assets: assets2, nonce, env }) => '<!DOCTYPE html>\n<html lang="en">\n	<head>\n		<meta charset="utf-8" />\n		<link rel="icon" href="' + assets2 + '/favicon.png" />\n		<meta name="viewport" content="width=device-width, initial-scale=1" />\n		' + head + '\n	</head>\n	<body data-sveltekit-preload-data="hover">\n		<div style="display: contents">' + body + "</div>\n	</body>\n</html>\n",
+    app: ({ head, body, assets: assets2, nonce, env }) => '<!DOCTYPE html>\n<html lang="en">\n	<head>\n		<meta charset="utf-8" />\n		<link rel="icon" href="' + assets2 + '/favicon.png" />\n		<meta name="viewport" content="width=device-width, initial-scale=1" />\n		\n		<!-- Bootstrap CSS -->\n		<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">\n		<!-- Font Awesome -->\n		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">\n		\n		<title>Pelico</title>\n		' + head + '\n	</head>\n	<body data-sveltekit-preload-data="hover">\n		<div style="display: contents">' + body + '</div>\n		\n		<!-- Bootstrap JS -->\n		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"><\/script>\n	</body>\n</html>\n',
     error: ({ status, message }) => '<!doctype html>\n<html lang="en">\n	<head>\n		<meta charset="utf-8" />\n		<title>' + message + `</title>
 
 		<style>
@@ -189,14 +189,13 @@ const options = {
 		<div class="error">
 			<span class="status">` + status + '</span>\n			<div class="message">\n				<h1>' + message + "</h1>\n			</div>\n		</div>\n	</body>\n</html>\n"
   },
-  version_hash: "1lr19xa"
+  version_hash: "1aw3j4u"
 };
 async function get_hooks() {
   let handle;
   let handleFetch;
   let handleError;
   let init;
-  ({ handle, handleFetch, handleError, init } = await import("./hooks.server.js"));
   let reroute;
   let transport;
   return {
