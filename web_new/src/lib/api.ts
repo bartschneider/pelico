@@ -86,6 +86,14 @@ export class ApiClient {
 		return this.post<Game[]>('/games/search', { query });
 	}
 
+	async getRecentlyPlayedGames(): Promise<Game[]> {
+		return this.get<Game[]>('/games/recently-played');
+	}
+
+	async getRecentlyAddedGames(limit = 5): Promise<Game[]> {
+		return this.get<Game[]>(`/games?limit=${limit}&sort=created_at&order=desc`);
+	}
+
 	// Platform endpoints
 	async getPlatforms(): Promise<Platform[]> {
 		return this.get<Platform[]>('/platforms');

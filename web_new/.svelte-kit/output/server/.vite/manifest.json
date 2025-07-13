@@ -93,6 +93,19 @@
       "_ssr.js"
     ],
     "css": [
+      "_app/immutable/assets/_page.O40q0tDD.css",
+      "_app/immutable/assets/GameCard.CzVZt-fu.css"
+    ]
+  },
+  "src/routes/collection/+page.svelte": {
+    "file": "entries/pages/collection/_page.svelte.js",
+    "name": "entries/pages/collection/_page.svelte",
+    "src": "src/routes/collection/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_ssr.js"
+    ],
+    "css": [
       "_app/immutable/assets/GameCard.CzVZt-fu.css"
     ]
   },

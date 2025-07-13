@@ -23,7 +23,16 @@
 						class:active={$page.url.pathname === '/'} 
 						href="/"
 					>
-						Games
+						<i class="fas fa-home me-1"></i>Dashboard
+					</a>
+				</li>
+				<li class="nav-item">
+					<a 
+						class="nav-link" 
+						class:active={$page.url.pathname === '/collection'} 
+						href="/collection"
+					>
+						<i class="fas fa-gamepad me-1"></i>Collection
 					</a>
 				</li>
 				<li class="nav-item">
@@ -32,7 +41,7 @@
 						class:active={$page.url.pathname === '/wishlist'} 
 						href="/wishlist"
 					>
-						Wishlist
+						<i class="fas fa-heart me-1"></i>Wishlist
 					</a>
 				</li>
 				<li class="nav-item">
@@ -41,7 +50,7 @@
 						class:active={$page.url.pathname === '/shortlist'} 
 						href="/shortlist"
 					>
-						Shortlist
+						<i class="fas fa-list me-1"></i>Shortlist
 					</a>
 				</li>
 				<li class="nav-item">
@@ -50,7 +59,7 @@
 						class:active={$page.url.pathname === '/stats'} 
 						href="/stats"
 					>
-						Stats
+						<i class="fas fa-chart-bar me-1"></i>Stats
 					</a>
 				</li>
 			</ul>

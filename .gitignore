@@ -13,8 +13,8 @@ pelico.exe
 *.prof
 *.out
 
-# Go module cache
-go.sum
+# Go module cache (keep go.sum for reproducible builds)
+# go.sum should NOT be ignored
 
 # IDE files
 .vscode/
@@ -138,3 +138,12 @@ ARCHITECTURE_AUDIT*
 claude-env.sh
 pelico-enhanced*
 web_new/.svelte-kit/
+web_new/build/
+web_new/.prettierrc.local
+*.tsbuildinfo
+
+# Additional binaries that might be generated
+server
+main
+deploy-to-homelab
+pelico-test
