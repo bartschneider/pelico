@@ -9,7 +9,7 @@
     ]
   },
   "_GameCard.svelte_svelte_type_style_lang.js": {
-    "file": "_app/immutable/assets/GameCard.Diu31AHu.css",
+    "file": "_app/immutable/assets/GameCard.CzVZt-fu.css",
     "src": "_GameCard.svelte_svelte_type_style_lang.js"
   },
   "_exports.js": {
@@ -84,7 +84,7 @@
       "_ssr.js"
     ],
     "css": [
-      "_app/immutable/assets/GameCard.Diu31AHu.css"
+      "_app/immutable/assets/GameCard.CzVZt-fu.css"
     ]
   },
   "src/routes/shortlist/+page.svelte": {
@@ -96,7 +96,7 @@
       "_ssr.js"
     ],
     "css": [
-      "_app/immutable/assets/GameCard.Diu31AHu.css"
+      "_app/immutable/assets/GameCard.CzVZt-fu.css"
     ]
   },
   "src/routes/stats/+page.svelte": {
@@ -117,7 +117,7 @@
       "_ssr.js"
     ],
     "css": [
-      "_app/immutable/assets/GameCard.Diu31AHu.css"
+      "_app/immutable/assets/GameCard.CzVZt-fu.css"
     ]
   }
 }

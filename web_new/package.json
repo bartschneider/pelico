@@ -22,6 +22,7 @@
   "type": "module",
   "dependencies": {
     "@popperjs/core": "^2.11.8",
+    "@sveltejs/adapter-node": "^5.2.13",
     "bootstrap": "^5.3.7"
   }
 }
