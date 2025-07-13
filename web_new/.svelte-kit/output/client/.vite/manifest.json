@@ -1,6 +1,6 @@
 {
   ".svelte-kit/generated/client-optimized/app.js": {
-    "file": "_app/immutable/entry/app.DdKFJPzF.js",
+    "file": "_app/immutable/entry/app.CcBhD1wC.js",
     "name": "entry/app",
     "src": ".svelte-kit/generated/client-optimized/app.js",
     "isEntry": true,
@@ -18,7 +18,7 @@
     ]
   },
   ".svelte-kit/generated/client-optimized/nodes/0.js": {
-    "file": "_app/immutable/nodes/0.wIMz6jyl.js",
+    "file": "_app/immutable/nodes/0.CNCAOAQN.js",
     "name": "nodes/0",
     "src": ".svelte-kit/generated/client-optimized/nodes/0.js",
     "isEntry": true,
@@ -26,7 +26,7 @@
     "imports": [
       "_iMvok6IP.js",
       "_IHki7fMi.js",
-      "_C3uSg5Kz.js",
+      "_a8659EgM.js",
       "_DhZ3S4cX.js"
     ],
     "css": [
@@ -34,7 +34,7 @@
     ]
   },
   ".svelte-kit/generated/client-optimized/nodes/1.js": {
-    "file": "_app/immutable/nodes/1.Bla3WHqF.js",
+    "file": "_app/immutable/nodes/1.mopeyWsE.js",
     "name": "nodes/1",
     "src": ".svelte-kit/generated/client-optimized/nodes/1.js",
     "isEntry": true,
@@ -42,7 +42,7 @@
     "imports": [
       "_iMvok6IP.js",
       "_IHki7fMi.js",
-      "_C3uSg5Kz.js"
+      "_a8659EgM.js"
     ]
   },
   ".svelte-kit/generated/client-optimized/nodes/2.js": {
@@ -103,16 +103,16 @@
     "file": "_app/immutable/assets/GameCard.CzVZt-fu.css",
     "src": "_!~{00e}~.js"
   },
-  "_C3uSg5Kz.js": {
-    "file": "_app/immutable/chunks/C3uSg5Kz.js",
-    "name": "stores",
-    "imports": [
-      "_DUXRKbKK.js"
-    ]
-  },
   "_CHS-Rq5X.js": {
     "file": "_app/immutable/chunks/CHS-Rq5X.js",
     "name": "api",
+    "imports": [
+      "_iMvok6IP.js"
+    ]
+  },
+  "_DBWZJOtQ.js": {
+    "file": "_app/immutable/chunks/DBWZJOtQ.js",
+    "name": "entry",
     "imports": [
       "_iMvok6IP.js"
     ]
@@ -129,13 +129,6 @@
       "_app/immutable/assets/GameCard.CzVZt-fu.css"
     ]
   },
-  "_DUXRKbKK.js": {
-    "file": "_app/immutable/chunks/DUXRKbKK.js",
-    "name": "entry",
-    "imports": [
-      "_iMvok6IP.js"
-    ]
-  },
   "_DhZ3S4cX.js": {
     "file": "_app/immutable/chunks/DhZ3S4cX.js",
     "name": "bootstrap.esm"
@@ -144,17 +137,24 @@
     "file": "_app/immutable/chunks/IHki7fMi.js",
     "name": "index"
   },
+  "_a8659EgM.js": {
+    "file": "_app/immutable/chunks/a8659EgM.js",
+    "name": "stores",
+    "imports": [
+      "_DBWZJOtQ.js"
+    ]
+  },
   "_iMvok6IP.js": {
     "file": "_app/immutable/chunks/iMvok6IP.js",
     "name": "Component"
   },
   "node_modules/@sveltejs/kit/src/runtime/client/entry.js": {
-    "file": "_app/immutable/entry/start.DjMF38mo.js",
+    "file": "_app/immutable/entry/start.CM6DVubf.js",
     "name": "entry/start",
     "src": "node_modules/@sveltejs/kit/src/runtime/client/entry.js",
     "isEntry": true,
     "imports": [
-      "_DUXRKbKK.js"
+      "_DBWZJOtQ.js"
     ]
   }
 }

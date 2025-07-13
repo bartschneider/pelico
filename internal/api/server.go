@@ -2,6 +2,7 @@ package api
 
 import (
 	"log/slog"
+	"net/http"
 	"time"
 	"pelico/internal/config"
 	"pelico/internal/handlers"
@@ -164,6 +165,11 @@ func (s *Server) setupRoutes() {
 
 func (s *Server) Run(addr string) error {
 	return s.router.Run(addr)
+}
+
+// ServeHTTP implements http.Handler interface
+func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	s.router.ServeHTTP(w, r)
 }
 
 // getCacheStats returns cache usage statistics
