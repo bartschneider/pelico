@@ -54,11 +54,21 @@ services:
     container_name: pelico-frontend
     ports:
       - "8081:3000"
+    environment:
+      - NODE_ENV=production
+      - HOST=0.0.0.0
+      - PORT=3000
     networks:
       - pelico-network
     depends_on:
-      - pelico
+      pelico:
+        condition: service_healthy
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 volumes:
   postgres_data:
