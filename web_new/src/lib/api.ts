@@ -92,7 +92,8 @@ export class ApiClient {
 	}
 
 	async getRecentlyAddedGames(limit = 5): Promise<Game[]> {
-		return this.get<Game[]>(`/games?limit=${limit}&sort=created_at&order=desc`);
+		const response = await this.get<{games: Game[]}>(`/games?limit=${limit}&sort=created_at&order=desc`);
+		return response.games || [];
 	}
 
 	// Platform endpoints

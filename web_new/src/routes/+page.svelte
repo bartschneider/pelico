@@ -122,7 +122,12 @@
 
   function handleLogSession(event: CustomEvent<number>) {
     const gameId = event.detail;
-    const game = [...recentlyPlayed, ...recentlyAdded].find(g => g.id === gameId);
+    // Ensure arrays are properly initialized before spreading
+    const allGames = [
+      ...(Array.isArray(recentlyPlayed) ? recentlyPlayed : []),
+      ...(Array.isArray(recentlyAdded) ? recentlyAdded : [])
+    ];
+    const game = allGames.find(g => g.id === gameId);
     if (game) {
       selectedGame = game;
       showSessionModal = true;
