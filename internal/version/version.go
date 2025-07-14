@@ -8,7 +8,7 @@ import (
 const (
 	Major = 1
 	Minor = 2
-	Patch = 6
+	Patch = 7
 )
 
 var (
