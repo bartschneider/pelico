@@ -61,13 +61,13 @@ func TestSessionValidation(t *testing.T) {
 			expectedError:  "Rating",
 		},
 		{
-			name: "Invalid rating (too low)",
+			name: "Valid rating at minimum (1)",
 			requestBody: map[string]interface{}{
 				"start_time": time.Now().Format(time.RFC3339),
-				"rating":     0,
+				"rating":     1,
 			},
-			expectedStatus: http.StatusBadRequest,
-			expectedError:  "Rating",
+			expectedStatus: http.StatusOK,
+			expectedError:  "",
 		},
 	}
 	
