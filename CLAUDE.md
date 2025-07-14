@@ -9,6 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Module**: `pelico`
 - **Architecture**: REST API backend with web frontend
 - **Database**: PostgreSQL with GORM ORM
+- **CI/CD**: Automated deployment pipeline with version management
 
 ## Development Commands
 
@@ -58,6 +59,122 @@ go mod tidy
 
 # Download dependencies
 make deps
+```
+
+## Build & Deployment Process
+
+### Prerequisites
+Ensure `.env` file contains all required deployment variables:
+```bash
+HOMELAB_USER="bartosz"
+HOMELAB_IP="192.168.1.52"
+HOMELAB_SSH_PORT="22"
+HOMELAB_SSH_PASSWORD="your-password"
+DEPLOY_TO_PORT="8081"
+```
+
+### Deployment Process
+
+#### 1. Primary Deployment Method
+```bash
+# Deploy to homelab
+bash deploy.sh
+
+# Or use Make
+make deploy
+```
+
+This will:
+- Build Docker image locally (no cache)
+- Transfer image to homelab
+- Stop old containers
+- Clean all old images
+- Start new containers
+- Verify deployment
+
+#### 2. CI/CD Pipeline (Alternative)
+```bash
+# Make changes
+git add .
+git commit -m "feat: Your feature description"  # Auto version bump
+git push origin main                            # Auto test & deploy
+```
+
+#### 3. Version Control
+```bash
+# Major version (1.2.3 → 2.0.0)
+git commit -m "feat: [major] Breaking API changes"
+
+# Minor version (1.2.3 → 1.3.0)
+git commit -m "feat: [minor] New feature"
+
+# Patch version (1.2.3 → 1.2.4) - default
+git commit -m "fix: Bug fix"
+```
+
+#### 4. Monitoring
+```bash
+# Watch deployment progress
+tail -f deployment.log
+
+# Check container status
+make homelab-status
+
+# View application logs
+make homelab-logs
+
+# Verify deployment
+curl http://192.168.1.52:8081/api/v1/version
+```
+
+### Deployment Scripts
+- `deploy.sh` - Primary deployment script (USE THIS)
+- `scripts/version-bump.sh` - Manages semantic versioning
+- `scripts/deploy-continuous.sh` - CI/CD deployment script
+- `scripts/verify-deployment.sh` - Health checks with rollback
+- `scripts/test-cicd-pipeline.sh` - Test the pipeline
+
+### Git Hooks (Optional)
+- `.git/hooks/post-commit` - Auto version bump
+- `.git/hooks/pre-push` - Run tests before push
+- `.git/hooks/post-merge` - Trigger deployment
+
+### Important Notes
+- The application has migrated from Go templates to SvelteKit
+- Frontend is pre-built in `web_new/build` and copied to `web` during deployment
+- Docker image name in docker-compose is `pelico` (not `pelico-app`)
+- Always use `deploy.sh` for clean deployments
+
+### Troubleshooting Deployment
+
+#### Tests Failing
+```bash
+# Run tests locally first
+go test ./... -v
+
+# Skip deployment prompt
+git push origin main  # Answer 'N' when prompted
+```
+
+#### Deployment Issues
+```bash
+# Check deployment logs
+cat deployment.log
+
+# Verify SSH connection
+ssh -p 22 bartosz@192.168.1.52
+
+# Manual rollback if needed
+bash scripts/verify-deployment.sh --auto-rollback
+```
+
+#### Version Not Updating
+```bash
+# Check current version
+grep Version internal/version/version.go
+
+# Manual version bump
+bash scripts/version-bump.sh
 ```
 
 ## Project Structure

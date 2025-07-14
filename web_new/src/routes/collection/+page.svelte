@@ -1,10 +1,11 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import type { Game, Platform } from '$lib/models';
+  import type { Game, Platform, PlaySession } from '$lib/models';
   import { api, ApiError } from '$lib/api';
   import GameCard from '$lib/components/GameCard.svelte';
   import GameFormModal from '$lib/components/GameFormModal.svelte';
   import GameDetailModal from '$lib/components/GameDetailModal.svelte';
+  import SessionFormModal from '$lib/components/SessionFormModal.svelte';
 
   let games: Game[] = [];
   let platforms: Platform[] = [];
@@ -12,6 +13,7 @@
   let error: string | null = null;
   let showModal = false;
   let showDetailModal = false;
+  let showSessionModal = false;
   let selectedGame: Game | null = null;
   let searchQuery = '';
   let filteredGames: Game[] = [];
@@ -114,8 +116,31 @@
 
   function handleLogSession(event: CustomEvent<number>) {
     const gameId = event.detail;
-    // TODO: Implement session logging modal
-    console.log('Log session for game:', gameId);
+    const game = games.find(g => g.id === gameId);
+    if (game) {
+      selectedGame = game;
+      showSessionModal = true;
+      showDetailModal = false; // Close detail modal if open
+    }
+  }
+  
+  async function handleSessionSubmit(event: CustomEvent<Partial<PlaySession>>) {
+    const sessionData = event.detail;
+    
+    if (!selectedGame) return;
+    
+    try {
+      await api.createSession(selectedGame.id, sessionData);
+      showSessionModal = false;
+      // Optionally show success message
+    } catch (e) {
+      if (e instanceof ApiError) {
+        alert(`Failed to log session: ${e.message}`);
+      } else {
+        alert('An error occurred while logging the session.');
+      }
+      console.error('Log session error:', e);
+    }
   }
 
   function handleViewGame(event: CustomEvent<Game>) {
@@ -242,5 +267,14 @@
     on:edit={openEditGameModal}
     on:delete={handleDeleteGame}
     on:log={handleLogSession}
+  />
+{/if}
+
+{#if showSessionModal && selectedGame}
+  <SessionFormModal
+    game={selectedGame}
+    show={showSessionModal}
+    on:submit={handleSessionSubmit}
+    on:close={() => showSessionModal = false}
   />
 {/if}

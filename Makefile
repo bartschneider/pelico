@@ -111,29 +111,9 @@ reset-all: clean docker-down
 	docker volume prune -f
 
 # Homelab deployment commands
-deploy: docker-build
-	@echo "Deploying to homelab server $(SERVER_HOST)..."
-	@echo "Stopping containers on server..."
-	sshpass -p '$(SERVER_PASSWORD)' ssh $(SERVER_USER)@$(SERVER_HOST) 'cd $(PROJECT_DIR) && docker compose down'
-	@echo "Transferring Docker images..."
-	docker save pelico-app:latest | sshpass -p '$(SERVER_PASSWORD)' ssh $(SERVER_USER)@$(SERVER_HOST) 'docker load'
-	docker save pelico-frontend:latest | sshpass -p '$(SERVER_PASSWORD)' ssh $(SERVER_USER)@$(SERVER_HOST) 'docker load'
-	@echo "Starting containers on server..."
-	sshpass -p '$(SERVER_PASSWORD)' ssh $(SERVER_USER)@$(SERVER_HOST) 'cd $(PROJECT_DIR) && docker compose up -d'
-	@echo "Waiting for services to start..."
-	@sleep 10
-	@echo "🔍 Verifying deployment..."
-	@if curl -s "http://$(SERVER_HOST):$(DEPLOY_PORT)" | grep -q "Pelico"; then \
-		echo "✅ Frontend health check: PASSED"; \
-	else \
-		echo "❌ Frontend health check: FAILED"; \
-	fi
-	@if curl -s "http://$(SERVER_HOST):8081/api/v1/health" | grep -q '"status":"healthy"'; then \
-		echo "✅ Backend health check: PASSED"; \
-	else \
-		echo "❌ Backend health check: FAILED"; \
-	fi
-	@echo "✅ Deployment complete! Application available at: http://$(SERVER_HOST):$(DEPLOY_PORT)"
+deploy:
+	@echo "Running deployment script..."
+	@bash deploy.sh
 
 homelab-status:
 	@echo "Checking homelab container status..."

@@ -55,6 +55,7 @@ export interface PlaySession {
   end_time?: string;
   duration_minutes?: number;
   notes?: string;
+  rating?: number;
   created_at?: string;
   updated_at?: string;
 }
