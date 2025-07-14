@@ -138,6 +138,10 @@ export class ApiClient {
 		return this.get<PlaySession[]>('/sessions/active');
 	}
 
+	async getAllSessions(): Promise<PlaySession[]> {
+		return this.get<PlaySession[]>('/sessions');
+	}
+
 	async endSession(sessionId: number): Promise<PlaySession> {
 		return this.post<PlaySession>(`/sessions/${sessionId}/end`, {});
 	}

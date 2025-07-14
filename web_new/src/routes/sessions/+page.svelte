@@ -4,7 +4,7 @@
 	import { showSuccess, showError } from '$lib/stores/notifications';
 	import type { PlaySession, Game } from '$lib/models';
 
-	let activeSessions: PlaySession[] = [];
+	let allSessions: PlaySession[] = [];
 	let allGames: Game[] = [];
 	let loading = false;
 
@@ -32,10 +32,10 @@
 		loading = true;
 		try {
 			const [sessions, games] = await Promise.all([
-				api.getActiveSessions(),
+				api.getAllSessions(),
 				api.getGames()
 			]);
-			activeSessions = sessions;
+			allSessions = sessions;
 			allGames = games;
 		} catch (error: any) {
 			showError('Error', 'Failed to load data');
@@ -202,13 +202,13 @@
 		</div>
 	{:else}
 		<!-- Active Sessions -->
-		{#if activeSessions.filter(session => isActiveSession(session)).length > 0}
+		{#if allSessions.filter(session => isActiveSession(session)).length > 0}
 			<div class="mb-4">
 				<h2 class="h4 mb-3">
 					<i class="fas fa-play-circle text-success me-2"></i>Currently Playing
 				</h2>
 				<div class="row">
-					{#each activeSessions.filter(session => isActiveSession(session)) as session}
+					{#each allSessions.filter(session => isActiveSession(session)) as session}
 						<div class="col-md-6 col-lg-4 mb-3">
 							<div class="card border-success">
 								<div class="card-body">
@@ -252,7 +252,7 @@
 				<i class="fas fa-history me-2"></i>Session History
 			</h2>
 			
-			{#if activeSessions.length === 0}
+			{#if allSessions.length === 0}
 				<div class="text-center py-5">
 					<i class="fas fa-clock fa-3x text-muted mb-3"></i>
 					<h3 class="h5 mb-2">No Sessions Found</h3>
@@ -279,7 +279,7 @@
 								</tr>
 							</thead>
 							<tbody>
-								{#each activeSessions as session}
+								{#each allSessions as session}
 									<tr>
 										<td>
 											<div class="fw-medium">{getGameTitle(session.game_id)}</div>

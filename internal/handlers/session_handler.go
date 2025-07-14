@@ -208,6 +208,27 @@ func (h *SessionHandler) DeleteSession(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Session deleted successfully"})
 }
 
+// GetAllSessions returns all sessions with game info
+func (h *SessionHandler) GetAllSessions(c *gin.Context) {
+	var sessions []models.PlaySession
+	
+	// Get all sessions with preloaded game and platform info
+	result := h.db.Preload("Game").
+		Preload("Game.Platform").
+		Order("start_time DESC").
+		Find(&sessions)
+	
+	if result.Error != nil {
+		errors.RespondWithError(c, errors.ErrInternalServer, map[string]string{
+			"operation": "fetch_all_sessions",
+			"error": result.Error.Error(),
+		})
+		return
+	}
+	
+	c.JSON(http.StatusOK, sessions)
+}
+
 // GetActiveSessions returns all sessions without end_time (currently active)
 func (h *SessionHandler) GetActiveSessions(c *gin.Context) {
 	var sessions []models.PlaySession

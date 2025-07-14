@@ -97,6 +97,7 @@ func (s *Server) setupRoutes() {
 		// Play Sessions
 		api.GET("/games/:id/sessions", sessionHandler.GetGameSessions)
 		api.POST("/games/:id/sessions", sessionHandler.CreateSession)
+		api.GET("/sessions", sessionHandler.GetAllSessions)
 		api.PUT("/sessions/:id", sessionHandler.UpdateSession)
 		api.DELETE("/sessions/:id", sessionHandler.DeleteSession)
 		api.GET("/sessions/active", sessionHandler.GetActiveSessions)
