@@ -44,11 +44,9 @@ export class ApiClient {
 	}
 
 	async post<T>(endpoint: string, data?: unknown): Promise<T> {
-		const body = data ? JSON.stringify(data) : undefined;
-		console.log(`POST ${endpoint}:`, { data, body });
 		return this.request<T>(endpoint, {
 			method: 'POST',
-			body,
+			body: data ? JSON.stringify(data) : undefined,
 		});
 	}
 
@@ -124,7 +122,6 @@ export class ApiClient {
 	}
 
 	async createSession(gameId: number, session: Partial<PlaySession>): Promise<PlaySession> {
-		console.log('API createSession called with:', { gameId, session });
 		return this.post<PlaySession>(`/games/${gameId}/sessions`, session);
 	}
 

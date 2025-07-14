@@ -129,8 +129,6 @@
     
     if (!selectedGame) return;
     
-    console.log('Session data being sent:', sessionData);
-    
     try {
       await api.createSession(selectedGame.id, sessionData);
       showSessionModal = false;
@@ -142,7 +140,6 @@
         alert('An error occurred while logging the session.');
       }
       console.error('Log session error:', e);
-      console.error('Session data that failed:', sessionData);
     }
   }
 

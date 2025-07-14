@@ -22,7 +22,6 @@
   
   // Initialize/reset form when modal opens
   function initializeForm() {
-    console.log('SessionFormModal initializeForm called, session:', session);
     if (session) {
       // Edit mode
       startTime = new Date(session.start_time).toISOString().slice(0, 16);
@@ -37,7 +36,6 @@
       rating = '';
       notes = '';
     }
-    console.log('SessionFormModal initialized with startTime:', startTime);
   }
   
   // Call initializeForm when show changes to true
@@ -46,10 +44,7 @@
   }
   
   function handleSubmit() {
-    console.log('SessionFormModal handleSubmit called with:', { startTime, endTime, rating, notes });
-    
     if (!startTime) {
-      console.error('StartTime is empty!', { startTime, typeof: typeof startTime });
       alert('Please select a start time');
       return;
     }
@@ -62,7 +57,6 @@
         notes: notes || undefined
       };
       
-      console.log('SessionFormModal dispatching session data:', sessionData);
       dispatch('submit', sessionData);
     } catch (error) {
       console.error('Error creating session data:', error);

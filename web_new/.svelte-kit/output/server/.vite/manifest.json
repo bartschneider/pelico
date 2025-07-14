@@ -12,11 +12,14 @@
     "file": "_app/immutable/assets/GameCard.CzVZt-fu.css",
     "src": "_GameCard.svelte_svelte_type_style_lang.js"
   },
-  "_GameFormModal.js": {
-    "file": "chunks/GameFormModal.js",
-    "name": "GameFormModal",
+  "_SessionFormModal.svelte_svelte_type_style_lang.js": {
+    "file": "chunks/SessionFormModal.svelte_svelte_type_style_lang.js",
+    "name": "SessionFormModal.svelte_svelte_type_style_lang",
     "imports": [
       "_ssr.js"
+    ],
+    "css": [
+      "_app/immutable/assets/SessionFormModal.BIjM0rBZ.css"
     ]
   },
   "_exports.js": {
@@ -97,7 +100,7 @@
     "isEntry": true,
     "imports": [
       "_ssr.js",
-      "_GameFormModal.js"
+      "_SessionFormModal.svelte_svelte_type_style_lang.js"
     ],
     "css": [
       "_app/immutable/assets/_page.O40q0tDD.css",
@@ -111,10 +114,9 @@
     "isEntry": true,
     "imports": [
       "_ssr.js",
-      "_GameFormModal.js"
+      "_SessionFormModal.svelte_svelte_type_style_lang.js"
     ],
     "css": [
-      "_app/immutable/assets/_page.BIjM0rBZ.css",
       "_app/immutable/assets/GameCard.CzVZt-fu.css"
     ]
   },
