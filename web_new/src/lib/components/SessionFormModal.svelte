@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
+  import { createEventDispatcher, onMount } from 'svelte';
   import type { Game, PlaySession } from '$lib/models';
   
   export let show = false;
@@ -14,8 +14,15 @@
   let rating = '';
   let notes = '';
   
-  // Initialize form when modal opens
-  $: if (show) {
+  // Initialize default values on mount
+  onMount(() => {
+    const now = new Date();
+    startTime = now.toISOString().slice(0, 16);
+  });
+  
+  // Initialize/reset form when modal opens
+  function initializeForm() {
+    console.log('SessionFormModal initializeForm called, session:', session);
     if (session) {
       // Edit mode
       startTime = new Date(session.start_time).toISOString().slice(0, 16);
@@ -30,22 +37,37 @@
       rating = '';
       notes = '';
     }
+    console.log('SessionFormModal initialized with startTime:', startTime);
+  }
+  
+  // Call initializeForm when show changes to true
+  $: if (show) {
+    initializeForm();
   }
   
   function handleSubmit() {
+    console.log('SessionFormModal handleSubmit called with:', { startTime, endTime, rating, notes });
+    
     if (!startTime) {
+      console.error('StartTime is empty!', { startTime, typeof: typeof startTime });
       alert('Please select a start time');
       return;
     }
     
-    const sessionData: Partial<PlaySession> = {
-      start_time: new Date(startTime).toISOString(),
-      end_time: endTime ? new Date(endTime).toISOString() : undefined,
-      rating: rating ? parseInt(rating) : undefined,
-      notes: notes || undefined
-    };
-    
-    dispatch('submit', sessionData);
+    try {
+      const sessionData: Partial<PlaySession> = {
+        start_time: new Date(startTime).toISOString(),
+        end_time: endTime ? new Date(endTime).toISOString() : undefined,
+        rating: rating ? parseInt(rating) : undefined,
+        notes: notes || undefined
+      };
+      
+      console.log('SessionFormModal dispatching session data:', sessionData);
+      dispatch('submit', sessionData);
+    } catch (error) {
+      console.error('Error creating session data:', error);
+      alert('Error preparing session data. Please check your inputs.');
+    }
   }
   
   function handleClose() {
